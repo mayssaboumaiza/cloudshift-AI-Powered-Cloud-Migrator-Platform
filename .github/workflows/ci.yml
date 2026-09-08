@@ -44,12 +44,12 @@ jobs:
             BASE_SHA="$(git rev-list --max-parents=0 HEAD)"
           fi
 
-          git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- "*.py" > changed-python-files.txt
-          echo "count=$(wc -l < changed-python-files.txt)" >> "$GITHUB_OUTPUT"
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- "*.py" > /tmp/changed-python-files.txt
+          echo "count=$(wc -l < /tmp/changed-python-files.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Run ruff (format check)
         if: steps.changed-python-files.outputs.count != '0'
-        run: xargs -r ruff format --check < changed-python-files.txt
+        run: xargs -r ruff format --check < /tmp/changed-python-files.txt
 
       - name: Skip format check when no Python files changed
         if: steps.changed-python-files.outputs.count == '0'
