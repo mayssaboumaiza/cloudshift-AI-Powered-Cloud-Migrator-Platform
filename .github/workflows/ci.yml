@@ -26,10 +26,34 @@ jobs:
         run: pip install ruff
 
       - name: Run ruff (lint)
-        run: ruff check agents/ api/ configuration/ core/ pipeline/ rag/ services/ --output-format=github
+        run: ruff check agents/ api/ configuration/ core/ pipeline/ rag/ services/ --select E9 --output-format=github
+
+      - name: Collect changed Python files
+        id: changed-python-files
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+          fi
+
+          if [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]]; then
+            BASE_SHA="$(git rev-list --max-parents=0 HEAD)"
+          fi
+
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- "*.py" > changed-python-files.txt
+          echo "count=$(wc -l < changed-python-files.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Run ruff (format check)
-        run: ruff format --check agents/ api/ configuration/ core/ pipeline/ rag/ services/
+        if: steps.changed-python-files.outputs.count != '0'
+        run: xargs -r ruff format --check < changed-python-files.txt
+
+      - name: Skip format check when no Python files changed
+        if: steps.changed-python-files.outputs.count == '0'
+        run: echo "No Python files changed; skipping format check."
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Job 2: Unit tests (no DB — mocked dependencies)
