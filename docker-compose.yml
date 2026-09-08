@@ -1,0 +1,259 @@
+# Cloud Migrator — docker compose up --build
+#
+# 7 services :
+#   postgres       → base de données + pgvector
+#   vault          → gestion des secrets (production mode)
+#   vault-unsealer → init container : descelle vault automatiquement au démarrage
+#   neo4j          → Graph RAG (traversée multi-hop Cypher)
+#   api            → FastAPI + alembic upgrade head au démarrage
+#   executor       → TerraformRunner worker (terraform plan/apply, credentials JIT from Vault)
+#   frontend       → React/Vite
+
+services:
+
+  # ── PostgreSQL + pgvector ────────────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: cloud-migrator-db
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [internal_net]
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── HashiCorp Vault (production mode) ───────────────────────────────────────
+  # PREMIER DÉMARRAGE (une seule fois, si le volume vault_data est vide) :
+  #   1. docker compose exec vault vault operator init
+  #      → noter les 5 unseal keys + root token
+  #   2. Copier 3 unseal keys dans .env : VAULT_UNSEAL_KEY_1/2/3
+  #   3. Copier le root token dans .env : VAULT_TOKEN
+  #   4. docker compose restart vault-unsealer
+  #   5. vault secrets enable -path=migrations kv-v2  (une seule fois)
+  # Démarrages suivants : vault-unsealer gère l'unsealing automatiquement.
+  vault:
+    image: hashicorp/vault:1.17
+    container_name: cloud-migrator-vault
+    environment:
+      VAULT_LOCAL_CONFIG: >
+        {
+          "storage": {"file": {"path": "/vault/data"}},
+          "listener": [{"tcp": {"address": "0.0.0.0:8200", "tls_disable": 1}}],
+          "ui": false
+        }
+      VAULT_API_ADDR: "http://0.0.0.0:8200"
+    command: server
+    ports:
+      - "8200:8200"
+    volumes:
+      - vault_data:/vault/data
+    cap_add:
+      - IPC_LOCK
+    networks: [internal_net]
+    healthcheck:
+      # exit 0=unsealed, 2=sealed/not-init, 1=unreachable
+      # healthy dès que le process répond (même scellé)
+      test: ["CMD", "sh", "-c", "vault status -address=http://127.0.0.1:8200; CODE=$$?; test $$CODE -ne 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ── Vault Auto-Unsealer (init container) ────────────────────────────────────
+  # Lit les 3 clés depuis .env et appelle vault operator unseal au démarrage.
+  # Exécution unique (restart: no) — s'arrête après unsealing réussi.
+  # Note : en production, remplacer par Azure Key Vault Auto-Unseal.
+  vault-unsealer:
+    image: hashicorp/vault:1.17
+    container_name: cloud-migrator-vault-unsealer
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_UNSEAL_KEY_1: ${VAULT_UNSEAL_KEY_1:-}
+      VAULT_UNSEAL_KEY_2: ${VAULT_UNSEAL_KEY_2:-}
+      VAULT_UNSEAL_KEY_3: ${VAULT_UNSEAL_KEY_3:-}
+    command: >
+      sh -c "
+        if [ -z \"$$VAULT_UNSEAL_KEY_1\" ]; then
+          echo 'VAULT_UNSEAL_KEY_1/2/3 absent — premier deploiement : faire vault operator init dabord';
+          exit 0;
+        fi;
+        vault operator unseal $$VAULT_UNSEAL_KEY_1 &&
+        vault operator unseal $$VAULT_UNSEAL_KEY_2 &&
+        vault operator unseal $$VAULT_UNSEAL_KEY_3 &&
+        echo 'Vault descelle avec succes'
+      "
+    depends_on:
+      vault:
+        condition: service_healthy
+    networks: [internal_net]
+    restart: "no"
+
+  # ── Neo4j — Graph RAG traversal multi-hop ───────────────────────────────────
+  neo4j:
+    image: neo4j:5.19-community
+    container_name: cloud-migrator-neo4j
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-cloud-migrator}
+      NEO4J_server_config_strict__validation_enabled: "false"
+      NEO4J_server_memory_pagecache_size: 256m
+      NEO4J_server_jvm_additional: "-Xms256m -Xmx512m"
+    ports:
+      - "7474:7474"   # HTTP browser — interface graphique Neo4j
+      - "7687:7687"   # Bolt — utilisé par l'API Python
+    volumes:
+      - neo4j_data:/data
+    networks: [internal_net, external_net]
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Executor — TerraformRunner worker ───────────────────────────────────────
+  # Picks up RunnerJob rows from the queue, fetches credentials JIT from Vault
+  # (path: migrations/{migration_id}/azure|aws|gcp), runs:
+  #   terraform fmt → init → plan -out=tfplan → [human approval via SSE] → apply tfplan
+  # Credentials are injected into subprocess env only; never written to disk.
+  executor:
+    build:
+      context: .
+      args:
+        HF_TOKEN: ${HF_TOKEN:-}
+    image: cloud-migrator-api
+    container_name: cloud-migrator-executor
+    env_file: .env
+    volumes:
+      - ./output:/app/output
+      - tf_plugin_cache:/tmp/tf-plugins
+      - huggingface_cache:/tmp/huggingface
+    environment:
+      - DB_HOST=postgres
+      - VAULT_URL=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN:-}
+      - VAULT_MOUNT=migrations
+      - API_BASE_URL=http://api:8000
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN:-}
+      - TOKENIZERS_PARALLELISM=false
+      - HF_HUB_OFFLINE=1
+      - TRANSFORMERS_OFFLINE=1
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    networks: [internal_net, external_net]
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1"
+    command: python -m executor.worker
+
+  # ── FastAPI backend ──────────────────────────────────────────────────────────
+  # alembic upgrade head est exécuté AVANT uvicorn (via &&) — plus besoin d'un
+  # container migrate séparé.
+  api:
+    build:
+      context: .
+      args:
+        HF_TOKEN: ${HF_TOKEN:-}
+    image: cloud-migrator-api
+    container_name: cloud-migrator-api
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./output:/app/output
+      - secrets_data:/app/data/secrets
+      - huggingface_cache:/tmp/huggingface
+    environment:
+      - DB_HOST=postgres
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-cloud-migrator}
+      - VAULT_URL=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN:-}
+      - VAULT_MOUNT=migrations
+      - ALEMBIC_MANAGED=true
+      - TOKENIZERS_PARALLELISM=false
+      - HF_HUB_OFFLINE=1
+      - TRANSFORMERS_OFFLINE=1
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      vault-unsealer:
+        condition: service_completed_successfully
+    networks: [internal_net, external_net]
+    deploy:
+      resources:
+        limits:
+          memory: 5g
+          cpus: "2"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 60s
+    command: >
+      sh -c "alembic upgrade head && uvicorn app:app --host 0.0.0.0 --port 8000 --workers 1"
+
+  # ── Frontend React/Vite ──────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cloud-migrator-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [external_net]
+
+  # ── Automated PostgreSQL backup ──────────────────────────────────────────────
+  # Runs pg_dump every 24h, keeps 7 daily + 4 weekly backups in ./backups/
+  # To restore: gunzip -c backups/daily/cloud_migrator_YYYYMMDD_HHMMSS.sql.gz | psql -h localhost -U $DB_USER $DB_NAME
+  # DÉSACTIVÉ — décommenter pour la production
+
+networks:
+  internal_net:
+    internal: true
+  external_net: {}
+
+volumes:
+  postgres_data:
+  neo4j_data:
+  vault_data:
+  secrets_data:
+  tf_plugin_cache:      # persists downloaded Terraform providers across executor restarts
+  huggingface_cache:    # persists sentence-transformers model (~420 MB) across rebuilds

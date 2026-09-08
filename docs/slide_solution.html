@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slide 2 — Solution</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #ffffff;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+      color: #1e293b;
+    }
+    .slide {
+      width: 1200px; min-height: 675px;
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 48px 60px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 40px 120px rgba(0,0,0,0.6);
+    }
+    .slide::before {
+      content: '';
+      position: absolute; top: -100px; right: -100px;
+      width: 380px; height: 380px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(34,197,94,0.13) 0%, transparent 70%);
+    }
+
+    .label {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.15em;
+      text-transform: uppercase; color: #16a34a; margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 38px; font-weight: 800; line-height: 1.2; color: #1e293b;
+      margin-bottom: 6px;
+    }
+    h1 span { color: #16a34a; }
+    .subtitle {
+      font-size: 15px; color: #475569; margin-bottom: 32px;
+    }
+
+    /* Pipeline flow */
+    .pipeline {
+      display: flex; align-items: stretch; gap: 0;
+      margin-bottom: 28px;
+      overflow-x: auto;
+    }
+    .pipe-step {
+      flex: 1; min-width: 130px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 12px 12px;
+      text-align: center;
+      position: relative;
+    }
+    .pipe-step + .pipe-step {
+      margin-left: 10px;
+    }
+    .pipe-step + .pipe-step::before {
+      content: '→';
+      position: absolute; left: -14px; top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8; font-size: 14px; font-weight: 700;
+    }
+    .pipe-icon { font-size: 22px; margin-bottom: 6px; }
+    .pipe-name { font-size: 11px; font-weight: 700; color: #1e293b; margin-bottom: 3px; }
+    .pipe-tech { font-size: 10px; color: #64748b; line-height: 1.35; }
+    .pipe-step.agent01 { border-top: 3px solid #6366f1; }
+    .pipe-step.agent02 { border-top: 3px solid #3b82f6; }
+    .pipe-step.agent03 { border-top: 3px solid #22c55e; }
+    .pipe-step.scan    { border-top: 3px solid #f59e0b; }
+    .pipe-step.human   { border-top: 3px solid #a78bfa; }
+    .pipe-step.valid   { border-top: 3px solid #ef4444; }
+    .pipe-step.deploy  { border-top: 3px solid #0ea5e9; }
+
+    /* Feature grid */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 26px;
+    }
+    .feat {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 14px 12px;
+    }
+    .feat-icon { font-size: 20px; margin-bottom: 7px; }
+    .feat-title { font-size: 12px; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
+    .feat-body  { font-size: 11px; color: #475569; line-height: 1.5; }
+
+    /* Bottom results row */
+    .results {
+      display: flex; gap: 14px; align-items: stretch;
+    }
+    .res-card {
+      flex: 1;
+      border-radius: 10px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .res-card.green {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+    }
+    .res-card.blue {
+      background: #eff6ff;
+      border: 1px solid #93c5fd;
+    }
+    .res-card.purple {
+      background: #eef2ff;
+      border: 1px solid #a5b4fc;
+    }
+    .res-card.amber {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+    }
+    .res-num {
+      font-size: 26px; font-weight: 800;
+    }
+    .res-card.green  .res-num { color: #4ade80; }
+    .res-card.blue   .res-num { color: #60a5fa; }
+    .res-card.purple .res-num { color: #818cf8; }
+    .res-card.amber  .res-num { color: #fbbf24; }
+    .res-label { font-size: 11px; color: #475569; margin-top: 4px; line-height: 1.4; }
+
+    .slide-num {
+      position: absolute; bottom: 22px; right: 30px;
+      font-size: 12px; color: #64748b; font-weight: 600;
+    }
+    .talan-tag {
+      position: absolute; top: 22px; right: 30px;
+      font-size: 11px; font-weight: 700; color: #64748b;
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+<div class="slide">
+  <div class="talan-tag">Talan Tunisie · Data&amp;AI · 2025–2026</div>
+
+  <div class="label">Solution Proposée</div>
+  <h1>Cloud Migrator :<br /><span>Système multi-agents LLM</span> de migration automatisée</h1>
+  <p class="subtitle">Pipeline LangGraph · Azure GPT-4o · Graph RAG · Terraform IaC · Human-in-the-loop</p>
+
+  <!-- Pipeline -->
+  <div class="pipeline">
+    <div class="pipe-step scan">
+      <div class="pipe-icon">🔍</div>
+      <div class="pipe-name">Stack Analyzer</div>
+      <div class="pipe-tech">GitHub API<br/>HCL2 · AST<br/>Python imports</div>
+    </div>
+    <div class="pipe-step agent01">
+      <div class="pipe-icon">⚙️</div>
+      <div class="pipe-name">Agent 01<br/>Planification</div>
+      <div class="pipe-tech">ReAct · 6 outils<br/>7R taxonomy<br/>AHP scoring</div>
+    </div>
+    <div class="pipe-step human">
+      <div class="pipe-icon">👤</div>
+      <div class="pipe-name">Human-in-the-loop</div>
+      <div class="pipe-tech">Accepter / Rejeter<br/>Rejet partiel<br/>SSE temps réel</div>
+    </div>
+    <div class="pipe-step agent02">
+      <div class="pipe-icon">🏗️</div>
+      <div class="pipe-name">Agent 02<br/>IaC Generator</div>
+      <div class="pipe-tech">Terraform HCL<br/>Graph RAG<br/>pgvector</div>
+    </div>
+    <div class="pipe-step valid">
+      <div class="pipe-icon">🔒</div>
+      <div class="pipe-name">Validation</div>
+      <div class="pipe-tech">MCP IaC service<br/>Checkov · tflint<br/>Infracost</div>
+    </div>
+    <div class="pipe-step agent03">
+      <div class="pipe-icon">🚀</div>
+      <div class="pipe-name">Agent 03<br/>Déploiement</div>
+      <div class="pipe-tech">deploy.sh<br/>CI/CD YAML<br/>GitHub PR</div>
+    </div>
+    <div class="pipe-step deploy">
+      <div class="pipe-icon">☁️</div>
+      <div class="pipe-name">Infra Monitor</div>
+      <div class="pipe-tech">Health checks<br/>Métriques live<br/>Azure SDK</div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="features">
+    <div class="feat">
+      <div class="feat-icon">🧠</div>
+      <div class="feat-title">Graph RAG</div>
+      <div class="feat-body">Base de connaissances IaC vectorisée (pgvector), enrichissement dynamique des patterns Terraform par contexte sémantique.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Scoring AHP multicritère</div>
+      <div class="feat-body">Hiérarchie analytique : coût, maturité du service, disponibilité régionale, budget, conformité — décision objective.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔄</div>
+      <div class="feat-title">Boucle auto-correctrice</div>
+      <div class="feat-body">Jusqu'à 3 tentatives LLM sur les fichiers IaC invalides (Checkov/tflint). Escalade humaine si le seuil est atteint.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🐍</div>
+      <div class="feat-title">Migration de code AI</div>
+      <div class="feat-body">Patch automatique des imports Python SDK (ex. boto3 → azure-storage-blob) et fichiers .env pour les stacks LLM.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔁</div>
+      <div class="feat-title">Migration incrémentale</div>
+      <div class="feat-body">Détection des diffs Git depuis la dernière migration : seuls les fichiers/ressources modifiés sont re-migrés.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🕸️</div>
+      <div class="feat-title">Knowledge Graph</div>
+      <div class="feat-body">Graphe de connaissance RAG interactif — relations entre ressources IaC, patterns, contraintes — interrogeable en langage naturel.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">SSE temps réel</div>
+      <div class="feat-body">Chaque phase du pipeline émet des événements Server-Sent Events. Le frontend React affiche la progression live avec minuterie.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">💬</div>
+      <div class="feat-title">RAG Chatbot</div>
+      <div class="feat-body">Assistant flottant ancré sur le plan de migration courant — l'utilisateur interroge les décisions de l'agent en langage naturel.</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results">
+    <div class="res-card green">
+      <div class="res-num">84%</div>
+      <div class="res-label">Correctness<br/>Graph RAG</div>
+    </div>
+    <div class="res-card blue">
+      <div class="res-num">3</div>
+      <div class="res-label">Agents spécialisés<br/>en pipeline LangGraph</div>
+    </div>
+    <div class="res-card purple">
+      <div class="res-num">7R</div>
+      <div class="res-label">Stratégies de migration<br/>décidées automatiquement</div>
+    </div>
+    <div class="res-card amber">
+      <div class="res-num">20+</div>
+      <div class="res-label">Services cloud<br/>sur 3 providers</div>
+    </div>
+    <div class="res-card green">
+      <div class="res-num">14</div>
+      <div class="res-label">Fichiers de tests<br/>tous passants ✅</div>
+    </div>
+    <div class="res-card blue">
+      <div class="res-num">&lt;2s</div>
+      <div class="res-label">Analyse repo<br/>HCL2 + AST</div>
+    </div>
+  </div>
+
+  <div class="slide-num">2 / 2</div>
+</div>
+</body>
+</html>

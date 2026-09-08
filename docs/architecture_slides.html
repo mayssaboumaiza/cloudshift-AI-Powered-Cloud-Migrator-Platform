@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>CloudShift — Architecture Technique</title>
+<style>
+/* ══ RESET ══════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1B3A6B;--blue-mid:#2563A8;--blue-light:#6DB3D8;
+  --blue-pale:#B8D8EE;--white:#FFFFFF;--grey:#F0F5FA;
+  --green:#27AE60;--orange:#E67E22;--red:#E74C3C;
+  --purple:#8E44AD;--teal:#16A085;
+}
+html,body{width:100%;height:100%;background:#0d1b2e;
+  font-family:'Segoe UI',Arial,sans-serif;overflow:hidden;user-select:none}
+
+/* ══ DECK ════════════════════════════════════════════════════════ */
+#deck{width:1280px;height:720px;position:absolute;
+  top:50%;left:50%;transform:translate(-50%,-50%);overflow:hidden}
+.slide{width:100%;height:100%;position:absolute;top:0;left:0;
+  opacity:0;pointer-events:none;transition:opacity .45s ease;background:var(--white)}
+.slide.active{opacity:1;pointer-events:all}
+
+/* ══ HEADER ══════════════════════════════════════════════════════ */
+.sh{width:100%;height:82px;background:var(--navy);display:flex;
+  align-items:center;padding:0 34px;gap:16px;position:relative}
+.sh::after{content:'';position:absolute;bottom:-8px;left:0;
+  width:100%;height:8px;background:linear-gradient(to right,var(--blue-light),transparent)}
+.sh-icon{width:44px;height:44px;background:var(--blue-light);border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.sh-text h1{color:#fff;font-size:20px;font-weight:700}
+.sh-text p{color:var(--blue-pale);font-size:12px;font-style:italic;margin-top:2px}
+.sh-cnt{margin-left:auto;color:var(--blue-pale);font-size:13px;font-weight:600;
+  background:rgba(255,255,255,.12);padding:3px 12px;border-radius:20px}
+
+/* ══ BODY ════════════════════════════════════════════════════════ */
+.sb{width:100%;height:calc(100% - 82px);background:var(--grey);
+  padding:16px 32px 12px;overflow:hidden}
+
+/* ══ ANIMATION CLASSES ═══════════════════════════════════════════ */
+/* Items start invisible/offset; .visible makes them appear */
+.anim{opacity:0;transform:translateY(14px);
+  transition:opacity .4s ease,transform .4s ease}
+.anim.visible{opacity:1;transform:translateY(0)}
+.anim-x{opacity:0;transform:translateX(-16px);
+  transition:opacity .45s ease,transform .45s ease}
+.anim-x.visible{opacity:1;transform:translateX(0)}
+.anim-s{opacity:0;transform:scale(.9);
+  transition:opacity .4s ease,transform .4s ease}
+.anim-s.visible{opacity:1;transform:scale(1)}
+
+/* ══ LEGEND ══════════════════════════════════════════════════════ */
+.legend{display:flex;gap:18px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:#444;font-weight:600}
+.ld{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+
+/* ══ LAYER BOX ═══════════════════════════════════════════════════ */
+.layer{border-radius:12px;padding:12px 16px;margin-bottom:9px;
+  border:2px solid transparent}
+.lbl{font-size:10px;font-weight:800;letter-spacing:1px;
+  text-transform:uppercase;margin-bottom:7px;
+  display:flex;align-items:center;gap:7px}
+.lbl::after{content:'';flex:1;height:1px;background:currentColor;opacity:.25}
+.l-pres{background:#E8F4FD;border-color:var(--blue-light)}
+.l-pres .lbl{color:var(--blue-mid)}
+.l-orch{background:#EAF0FB;border-color:var(--blue-mid)}
+.l-orch .lbl{color:var(--navy)}
+.l-ag{background:#EDF7EE;border-color:var(--green)}
+.l-ag .lbl{color:var(--green)}
+.l-ext{background:#FEF9EC;border-color:var(--orange)}
+.l-ext .lbl{color:var(--orange)}
+
+/* ══ CARD ════════════════════════════════════════════════════════ */
+.row{display:flex;gap:9px}
+.card{flex:1;background:#fff;border-radius:10px;padding:9px 11px;
+  box-shadow:0 2px 7px rgba(0,0,0,.08);border-top:4px solid var(--blue-light);min-width:0}
+.card:hover{box-shadow:0 5px 16px rgba(0,0,0,.13)}
+.ct{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:3px}
+.cs{font-size:10.5px;color:#555;line-height:1.45}
+.tag{display:inline-block;background:var(--grey);color:var(--navy);
+  border-radius:4px;padding:1px 6px;font-size:9.5px;font-weight:700;
+  margin:3px 2px 0 0;border:1px solid var(--blue-pale)}
+
+.card.c-green{border-top-color:var(--green)}
+.card.c-orange{border-top-color:var(--orange)}
+.card.c-red{border-top-color:var(--red)}
+.card.c-purple{border-top-color:var(--purple)}
+.card.c-teal{border-top-color:var(--teal)}
+.card.c-navy{border-top-color:var(--navy)}
+
+/* ══ ARROW ROW ══════════════════════════════════════════════════ */
+.arw{display:flex;align-items:center;gap:6px;margin:5px 0}
+.arw-line{flex:1;height:2px;background:linear-gradient(to right,var(--blue-light),var(--navy))}
+.arw-tip{font-size:15px;color:var(--navy)}
+.arw-lbl{font-size:10px;font-weight:700;color:var(--navy);background:#fff;
+  padding:1px 8px;border-radius:10px;border:1px solid var(--blue-pale)}
+
+/* ══ BADGE ═══════════════════════════════════════════════════════ */
+.hitl{display:inline-flex;align-items:center;gap:5px;background:var(--orange);
+  color:#fff;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:800;
+  box-shadow:0 2px 6px rgba(230,126,34,.4)}
+
+/* ══ SLIDE 1 ─ overview rows ════════════════════════════════════ */
+.ov-grid{display:flex;flex-direction:column;gap:7px}
+.ov-row{display:flex;align-items:stretch;gap:9px}
+.ov-lbl{width:148px;flex-shrink:0;border-radius:9px;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:7px;text-align:center;font-size:10.5px;font-weight:800;gap:3px}
+.ov-lbl .icon{font-size:18px}
+.ov-lbl .name{text-transform:uppercase;letter-spacing:.5px;line-height:1.2}
+.ov-cards{display:flex;flex:1;gap:7px}
+.ov-card{flex:1;border-radius:8px;padding:7px 10px;font-size:11px;
+  background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.07);min-width:0}
+.ov-card .n{font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:2px}
+.ov-card .s{font-size:10px;color:#666}
+
+/* ══ SLIDE 2 ─ two-col ══════════════════════════════════════════ */
+.two-col{display:flex;gap:12px;height:100%}
+.col{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+
+/* pipeline flow pills */
+.flow-pills{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:4px}
+.fp{background:var(--grey);border-radius:6px;padding:4px 8px;
+  font-size:10px;font-weight:700;color:var(--navy)}
+.fp.hitl-fp{background:#FEF9EC;border:1px solid var(--orange);color:var(--orange)}
+.fp.err-fp{background:#FDECEA;border:1px solid var(--red);color:var(--red)}
+.fp-arr{font-size:13px;color:var(--blue-light)}
+
+/* ══ SLIDE 3 ─ agents ═══════════════════════════════════════════ */
+.agents-wrap{display:flex;gap:8px;height:calc(100% - 46px);align-items:stretch}
+.ag-box{flex:1;background:#fff;border-radius:12px;border-top:5px solid var(--green);
+  padding:11px 11px 9px;box-shadow:0 2px 9px rgba(0,0,0,.08);min-width:0;
+  display:flex;flex-direction:column}
+.ag-box:hover{box-shadow:0 5px 18px rgba(0,0,0,.13)}
+.ag-hdr{display:flex;align-items:center;gap:7px;margin-bottom:7px;
+  padding-bottom:5px;border-bottom:1px solid var(--grey)}
+.ag-num{width:27px;height:27px;border-radius:50%;background:var(--green);
+  color:#fff;font-size:12px;font-weight:800;display:flex;
+  align-items:center;justify-content:center;flex-shrink:0}
+.ag-name{font-size:12.5px;font-weight:700;color:var(--navy);line-height:1.2}
+.ag-sub{font-size:10px;color:#666}
+.tp{display:inline-block;background:#EDF7EE;color:var(--green);
+  border:1px solid #b7dfbe;border-radius:4px;padding:1px 6px;
+  font-size:9.5px;font-weight:700;margin:2px 2px 0 0}
+.tp.p{background:#F3EEF8;color:var(--purple);border-color:#cbb7dc}
+.tp.o{background:#FEF3E7;color:var(--orange);border-color:#f5c89a}
+.tp.r{background:#FDECEA;color:var(--red);border-color:#f5b8b3}
+.tp.n{background:#EAF0FB;color:var(--navy);border-color:#b0c4e8}
+.ag-metric{margin-top:auto;padding:4px 8px;background:var(--grey);
+  border-radius:6px;font-size:10px;color:var(--navy);font-weight:700}
+.fc{font-size:18px;color:var(--green);flex-shrink:0;align-self:center}
+
+/* output bar */
+.out-bar{background:var(--navy);border-radius:7px;padding:6px 14px;
+  display:flex;align-items:center;gap:10px;color:#fff;font-size:10.5px;
+  margin-top:7px;flex-shrink:0}
+.ob-tag{background:rgba(255,255,255,.15);padding:2px 8px;border-radius:4px}
+
+/* ══ SLIDE 4 ─ data ═════════════════════════════════════════════ */
+.three-col{display:flex;gap:12px;height:100%}
+.col3{flex:1;display:flex;flex-direction:column;gap:9px;min-width:0}
+.dc{background:#fff;border-radius:12px;padding:11px 13px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:5px solid var(--purple)}
+.dc.tn{border-left-color:var(--teal)}
+.dc.rd{border-left-color:var(--red)}
+.dc.nv{border-left-color:var(--navy)}
+.dc.gn{border-left-color:var(--green)}
+.dt{font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:5px;
+  display:flex;align-items:center;gap:5px}
+.db{font-size:11px;color:#555;line-height:1.5}
+.dtag{display:inline-block;background:var(--grey);color:var(--navy);
+  border-radius:4px;padding:1px 7px;font-size:9.5px;font-weight:700;
+  margin:3px 2px 0 0;border:1px solid var(--blue-pale)}
+
+.mini-t{width:100%;border-collapse:collapse;font-size:10px;margin-top:5px}
+.mini-t th{background:var(--navy);color:#fff;padding:3px 7px;text-align:left;font-size:9.5px}
+.mini-t td{padding:3px 7px;border-bottom:1px solid #eee;color:#333;vertical-align:top}
+.mini-t tr:nth-child(even) td{background:var(--grey)}
+
+.vault-step{display:flex;align-items:center;gap:7px;border-radius:6px;
+  padding:5px 9px;font-size:10.5px;margin-bottom:4px}
+.vault-arrow{text-align:center;font-size:16px;color:#ccc;margin:-1px 0}
+
+.rbac-grid{display:flex;gap:7px;margin-top:5px}
+.rbac-box{flex:1;border-radius:8px;padding:7px 9px;font-size:10px}
+.rbac-box .rb-title{font-size:11px;font-weight:800;margin-bottom:4px}
+.rbac-box div{line-height:1.6}
+
+/* ══ SLIDE 5 ─ ext+cloud ════════════════════════════════════════ */
+.ext-cards{display:flex;gap:9px;margin-top:0}
+.cloud-row{display:flex;gap:12px;margin-top:9px}
+.cp{flex:1;border-radius:12px;padding:14px 16px;text-align:center;
+  font-weight:800;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.cp .cpn{font-size:19px;font-weight:900}
+.cp .cps{font-size:10.5px;font-weight:400;opacity:.9;margin-top:4px}
+.cp .cpr{font-size:9.5px;opacity:.8;margin-top:5px}
+.cp.aws{background:linear-gradient(135deg,#FF9900,#e06000)}
+.cp.azure{background:linear-gradient(135deg,#0078D4,#0041A8)}
+.cp.gcp{background:linear-gradient(135deg,#4285F4,#34A853)}
+.tf-arrow{display:flex;align-items:center;justify-content:center;gap:10px;
+  margin:7px 0;font-size:11px;font-weight:700;color:var(--navy)}
+.tf-arrow::before,.tf-arrow::after{content:'';flex:1;height:2px;
+  background:linear-gradient(to right,var(--teal),var(--blue-light));border-radius:2px}
+
+/* ══ NAV ═════════════════════════════════════════════════════════ */
+#nav{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:14px;z-index:100}
+.nb{background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.3);
+  color:#fff;border-radius:50%;width:42px;height:42px;font-size:18px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .2s;backdrop-filter:blur(4px)}
+.nb:hover{background:rgba(109,179,216,.35)}
+.nb:disabled{opacity:.3;cursor:not-allowed}
+.dots{display:flex;gap:7px;align-items:center}
+.dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.3);
+  cursor:pointer;transition:background .2s,transform .2s;border:none}
+.dot.active{background:var(--blue-light);transform:scale(1.35)}
+.stag{color:rgba(255,255,255,.7);font-size:11.5px;font-weight:600;
+  background:rgba(255,255,255,.1);padding:3px 12px;border-radius:12px;
+  min-width:190px;text-align:center;backdrop-filter:blur(4px)}
+#progress{position:absolute;bottom:0;left:0;height:3px;
+  background:linear-gradient(to right,var(--blue-light),var(--navy));
+  transition:width .4s ease;border-radius:0 2px 2px 0}
+#hint{position:absolute;bottom:68px;right:18px;
+  color:rgba(255,255,255,.38);font-size:10.5px;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 1 ─ VUE D'ENSEMBLE                                      -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="slide active" id="s1">
+  <div class="sh">
+    <div class="sh-icon">🚀</div>
+    <div class="sh-text">
+      <h1>Architecture Technique — CloudShift</h1>
+      <p>Vue d'ensemble · 5 couches orchestrées · De l'analyse GitHub au déploiement cloud</p>
+    </div>
+    <div class="sh-cnt">1 / 5</div>
+  </div>
+  <div class="sb" style="padding-top:14px">
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:#6DB3D8"></div>Présentation</div>
+      <div class="li"><div class="ld" style="background:#2563A8"></div>Orchestration</div>
+      <div class="li"><div class="ld" style="background:#27AE60"></div>Agents IA</div>
+      <div class="li"><div class="ld" style="background:#8E44AD"></div>Données</div>
+      <div class="li"><div class="ld" style="background:#E67E22"></div>Services Externes</div>
+      <div class="li"><div class="ld" style="background:#16A085"></div>Cloud Cibles</div>
+      <span class="hitl" style="margin-left:auto;font-size:9.5px">⚙ HITL · 3 points d'interruption</span>
+    </div>
+
+    <div class="ov-grid">
+
+      <div class="ov-row anim-x visible" id="ov1">
+        <div class="ov-lbl" style="background:#E8F4FD;color:#2563A8">
+          <div class="icon">💻</div><div class="name">Présentation</div>
+        </div>
+        <div class="ov-cards">
+          <div class="ov-card"><div class="n">React 18 / Vite</div><div class="s">Dashboard temps réel · SSE events</div></div>
+          <div class="ov-card"><div class="n">Human-in-the-Loop</div><div class="s">Validation · Correction · Sélection services</div></div>
+          <div class="ov-card"><div class="n">RAG Chatbot</div><div class="s">Assistant conversationnel gpt-4o</div></div>
+          <div class="ov-card"><div class="n">JWT / RBAC</div><div class="s">Admin · DevOps · Auth sécurisée</div></div>
+        </div>
+      </div>
+
+      <div class="arw anim" id="arr1">
+        <div class="arw-line"></div><div class="arw-lbl">REST/HTTP · SSE events</div>
+        <div class="arw-tip">↓</div><div class="arw-line"></div>
+      </div>
+
+      <div class="ov-row anim-x" id="ov2">
+        <div class="ov-lbl" style="background:#EAF0FB;color:#1B3A6B">
+          <div class="icon">⚙️</div><div class="name">Orchestration</div>
+        </div>
+        <div class="ov-cards">
+          <div class="ov-card"><div class="n">FastAPI</div><div class="s">JWT · Rate limit · API Key</div></div>
+          <div class="ov-card"><div class="n">LangGraph StateGraph</div><div class="s">22 nœuds · 3 interruptions HITL</div></div>
+          <div class="ov-card"><div class="n">MigrationState</div><div class="s">TypedDict · Checkpoint PostgreSQL</div></div>
+        </div>
+      </div>
+
+      <div class="arw anim" id="arr2">
+        <div class="arw-line"></div><div class="arw-lbl">invoke → agents</div>
+        <div class="arw-tip">↓</div><div class="arw-line"></div>
+      </div>
+
+      <div class="ov-row anim-x" id="ov3">
+        <div class="ov-lbl" style="background:#EDF7EE;color:#27AE60">
+          <div class="icon">🤖</div><div class="name">Agents IA</div>
+        </div>
+        <div class="ov-cards">
+          <div class="ov-card"><div class="n">⚪ Stack Analyzer</div><div class="s">HCL2 · AST Python · 0 LLM · &lt;2s</div></div>
+          <div class="ov-card"><div class="n">🤖 Agent 01</div><div class="s">ReAct · 8 outils · AHP-SAW · 7R</div></div>
+          <div class="ov-card"><div class="n">🤖 Agent 02</div><div class="s">Graph RAG · Terraform HCL · 4 outils</div></div>
+          <div class="ov-card"><div class="n">🤖 Agent 03</div><div class="s">Jinja2 · deploy.sh · CI/CD YAML</div></div>
+        </div>
+      </div>
+
+      <div class="arw anim" id="arr3">
+        <div class="arw-line"></div><div class="arw-lbl">SQLAlchemy async · pgvector · Vault JIT</div>
+        <div class="arw-tip">↓</div><div class="arw-line"></div>
+      </div>
+
+      <div class="ov-row anim-x" id="ov4">
+        <div class="ov-lbl" style="background:#F3EEF8;color:#8E44AD">
+          <div class="icon">🗃️</div><div class="name">Données</div>
+        </div>
+        <div class="ov-cards">
+          <div class="ov-card"><div class="n">PostgreSQL 16</div><div class="s">Checkpoints · Migrations · Audit</div></div>
+          <div class="ov-card"><div class="n">Graph RAG</div><div class="s">Neo4j Cypher · pgvector · 84% correctness</div></div>
+          <div class="ov-card"><div class="n">HashiCorp Vault</div><div class="s">Secrets JIT · 0 credential en base</div></div>
+        </div>
+      </div>
+
+      <div class="arw anim" id="arr4">
+        <div class="arw-line"></div><div class="arw-lbl">subprocess · terraform apply</div>
+        <div class="arw-tip">↓</div><div class="arw-line"></div>
+      </div>
+
+      <div class="ov-row anim-x" id="ov5">
+        <div class="ov-lbl" style="background:#E8F8F1;color:#16A085">
+          <div class="icon">☁️</div><div class="name">Cloud Cibles</div>
+        </div>
+        <div class="ov-cards">
+          <div class="ov-card" style="border-left:4px solid #FF9900"><div class="n">☁ AWS</div><div class="s">EC2 · RDS · S3 · SageMaker</div></div>
+          <div class="ov-card" style="border-left:4px solid #0078D4"><div class="n">☁ Microsoft Azure</div><div class="s">AKS · CosmosDB · OpenAI Service</div></div>
+          <div class="ov-card" style="border-left:4px solid #4285F4"><div class="n">☁ Google Cloud</div><div class="s">GKE · BigQuery · Vertex AI</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 2 ─ PRÉSENTATION + ORCHESTRATION                        -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s2">
+  <div class="sh">
+    <div class="sh-icon">💻</div>
+    <div class="sh-text">
+      <h1>Couche Présentation &amp; Orchestration</h1>
+      <p>React 18 · FastAPI · LangGraph StateGraph · SSE temps réel · JWT / RBAC</p>
+    </div>
+    <div class="sh-cnt">2 / 5</div>
+  </div>
+  <div class="sb">
+    <div class="two-col">
+
+      <!-- LEFT -->
+      <div class="col">
+
+        <div class="layer l-pres anim" id="lp1">
+          <div class="lbl">💻 Couche Présentation</div>
+          <div class="row">
+            <div class="card">
+              <div class="ct">⚡ React 18 / Vite</div>
+              <div class="cs">Dashboard migration · Routing SPA · Hot reload</div>
+              <span class="tag">Port :3000</span><span class="tag">Vite 5</span>
+            </div>
+            <div class="card">
+              <div class="ct">📣 SSE Stream</div>
+              <div class="cs">Notifications temps réel · Progression pipeline sans polling</div>
+              <span class="tag">EventSource</span><span class="tag">async</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="layer anim" id="lp2" style="background:#FEF9EC;border-color:var(--orange)">
+          <div class="lbl" style="color:var(--orange)">⚠ Human-in-the-Loop · 3 points d'interruption</div>
+          <div class="row">
+            <div class="card c-orange">
+              <div class="ct">ask_human</div>
+              <div class="cs">Validation plan Agent 01 · Accept / Reject / Correct</div>
+            </div>
+            <div class="card c-orange">
+              <div class="ct">ask_user_services</div>
+              <div class="cs">Sélection manuelle des services si rejetés</div>
+            </div>
+            <div class="card c-orange">
+              <div class="ct">wait_runner</div>
+              <div class="cs">Confirmation avant terraform apply en production</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="layer l-pres anim" id="lp3">
+          <div class="lbl">🤖 Assistant Conversationnel &amp; Auth</div>
+          <div class="row">
+            <div class="card">
+              <div class="ct">💬 RAG Chatbot</div>
+              <div class="cs">gpt-4o · Contexte migration · Historique persistant · graph_data si question graphe</div>
+              <span class="tag">gpt-4o</span><span class="tag">rag_messages</span><span class="tag">get_traversal</span>
+            </div>
+            <div class="card">
+              <div class="ct">🔒 Auth / RBAC</div>
+              <div class="cs">JWT · API Key · Admin &amp; DevOps · HTTP 403 si dépassement scope</div>
+              <span class="tag">JWT</span><span class="tag">Role-based</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT -->
+      <div class="col">
+
+        <div class="layer l-orch anim" id="lo1">
+          <div class="lbl">⚙ Couche Orchestration</div>
+          <div class="row">
+            <div class="card c-navy">
+              <div class="ct">⚡ FastAPI</div>
+              <div class="cs">API REST · JWT middleware · Rate limiting · Background tasks</div>
+              <span class="tag">Port :8000</span><span class="tag">async</span>
+            </div>
+            <div class="card c-navy">
+              <div class="ct">📊 LangGraph</div>
+              <div class="cs">StateGraph · 22 nœuds · 3 interruptions HITL · recursion_limit=60</div>
+              <span class="tag">StateGraph</span><span class="tag">TypedDict</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="layer l-orch anim" id="lo2">
+          <div class="lbl">📋 État Global — MigrationState</div>
+          <div class="row">
+            <div class="card">
+              <div class="ct">MigrationState (TypedDict)</div>
+              <div class="cs">repo_url · plan · iac_files · deployment_status · errors · hitl_decision · rag_context…</div>
+              <span class="tag">TypedDict</span><span class="tag">Checkpoint PG</span><span class="tag">Alembic</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="layer l-orch anim" id="lo3" style="padding:10px 14px">
+          <div class="lbl">🔄 Flux du Pipeline LangGraph</div>
+          <div class="flow-pills">
+            <span class="fp">analyze_repo</span><span class="fp-arr">→</span>
+            <span class="fp">cooldown</span><span class="fp-arr">→</span>
+            <span class="fp">build_plan</span><span class="fp-arr">→</span>
+            <span class="fp hitl-fp">ask_human ⚠</span><span class="fp-arr">→</span>
+            <span class="fp">check_plan</span><span class="fp-arr">→</span>
+            <span class="fp">generate_iac</span><span class="fp-arr">→</span>
+            <span class="fp">validate_iac</span><span class="fp-arr">→</span>
+            <span class="fp err-fp">fix_targeted 🔄</span><span class="fp-arr">→</span>
+            <span class="fp hitl-fp">wait_runner ⚠</span><span class="fp-arr">→</span>
+            <span class="fp">deploy</span><span class="fp-arr">→</span>
+            <span class="fp">export_zip</span>
+          </div>
+        </div>
+
+        <div class="layer l-orch anim" id="lo4" style="padding:10px 14px">
+          <div class="lbl">🗄 Persistance &amp; Infra</div>
+          <div class="row">
+            <div class="card c-navy" style="font-size:10.5px">
+              <div class="ct">PostgreSQL 16 + Alembic</div>
+              <div class="cs">Checkpoint LangGraph · Audit SSE · pipeline_events · runner_jobs</div>
+            </div>
+            <div class="card c-navy" style="font-size:10.5px">
+              <div class="ct">Docker Compose</div>
+              <div class="cs">FastAPI · React · PostgreSQL · Neo4j · MCP IaC :8001 · Vault</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 3 ─ AGENTS IA                                           -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s3">
+  <div class="sh">
+    <div class="sh-icon">🤖</div>
+    <div class="sh-text">
+      <h1>Couche Agents IA</h1>
+      <p>Stack Analyzer · Agent 01 Migration Planner · Agent 02 IaC Generator · Agent 03 Deployer</p>
+    </div>
+    <div class="sh-cnt">3 / 5</div>
+  </div>
+  <div class="sb" style="padding:14px 24px 10px;display:flex;flex-direction:column">
+    <div class="agents-wrap">
+
+      <!-- Agent 0 -->
+      <div class="ag-box anim-s" id="ag0" style="border-top-color:var(--navy)">
+        <div class="ag-hdr">
+          <div class="ag-num" style="background:var(--navy)">0</div>
+          <div>
+            <div class="ag-name">Stack Analyzer</div>
+            <div class="ag-sub">Analyse statique · 0 LLM</div>
+          </div>
+        </div>
+        <div style="font-size:10.5px;color:#555;line-height:1.6">
+          <b>Pipeline 100% déterministe</b><br>
+          ① Clonage GitHub — PyGithub · Cache 24h<br>
+          ② Parsing IaC — python-hcl2 + regex<br>
+          ③ Analyse AST Python — AIPythonAnalyzer<br>
+          ④ Graphe dépendances — NetworkX<br>
+          ⑤ Scoring &amp; priorisation migrations
+        </div>
+        <div style="margin-top:7px">
+          <span class="tp n">python-hcl2</span>
+          <span class="tp n">AST Python</span>
+          <span class="tp n">NetworkX</span>
+          <span class="tp n">PyGithub</span>
+          <span class="tp n">PyYAML</span>
+        </div>
+        <div class="ag-metric" style="margin-top:8px">⏱ &lt;2s · Cache TTL 24h · 8 workers</div>
+      </div>
+
+      <div class="fc anim" id="fc1">→</div>
+
+      <!-- Agent 01 -->
+      <div class="ag-box anim-s" id="ag1">
+        <div class="ag-hdr">
+          <div class="ag-num">01</div>
+          <div>
+            <div class="ag-name">Migration Planner</div>
+            <div class="ag-sub">ReAct · gpt-5.1 · AHP-SAW · 7R</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:#555;margin-bottom:4px"><b>8 outils ReAct :</b></div>
+        <span class="tp">lookup_mapping_v2</span>
+        <span class="tp">check_region_availability</span>
+        <span class="tp">check_budget_fit</span>
+        <span class="tp">check_service_maturity</span>
+        <span class="tp">score_candidates_v2</span>
+        <span class="tp">decide_7r_strategy</span>
+        <span class="tp">find_equivalent_service</span>
+        <span class="tp">apply_decision</span>
+        <div style="margin-top:7px;font-size:10px;color:#555">
+          <b>Taxonomie 7R :</b> Rehost · Replatform · Refactor ·
+          Repurchase · Relocate · Retain · Retire
+        </div>
+        <div class="ag-metric">🎯 AHP-SAW · CR≤0.175 · max 3 iter/batch</div>
+        <div style="margin-top:5px">
+          <span class="hitl" style="font-size:9px;padding:2px 8px">HITL ask_human</span>
+        </div>
+      </div>
+
+      <div class="fc anim" id="fc2">→</div>
+
+      <!-- Agent 02 -->
+      <div class="ag-box anim-s" id="ag2" style="border-top-color:var(--purple)">
+        <div class="ag-hdr">
+          <div class="ag-num" style="background:var(--purple)">02</div>
+          <div>
+            <div class="ag-name">IaC Generator</div>
+            <div class="ag-sub">ReAct · Graph RAG · gpt-5.1</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:#555;margin-bottom:4px"><b>4 outils :</b></div>
+        <span class="tp p">write_terraform_file</span>
+        <span class="tp p">validate_terraform_block</span>
+        <span class="tp p">get_rag_context_for_resource</span>
+        <span class="tp p">read_generated_files</span>
+        <div style="margin-top:7px;font-size:10px;color:#555;line-height:1.5">
+          <b>Graph RAG 3 signaux :</b><br>
+          pgvector cosine · Traversée DEPENDS_ON /<br>
+          COMPANION · Patterns canoniques HCL
+        </div>
+        <div class="ag-metric" style="background:#F3EEF8;color:var(--purple)">
+          🎯 84% correctness · fix_targeted max 3×
+        </div>
+        <div style="margin-top:5px">
+          <span style="background:#FDECEA;color:var(--red);border-radius:5px;
+            padding:2px 8px;font-size:9px;font-weight:800;
+            border:1px solid #f5b8b3">Checkov · Infracost · terraform validate</span>
+        </div>
+      </div>
+
+      <div class="fc anim" id="fc3">→</div>
+
+      <!-- Agent 03 -->
+      <div class="ag-box anim-s" id="ag3" style="border-top-color:var(--orange)">
+        <div class="ag-hdr">
+          <div class="ag-num" style="background:var(--orange)">03</div>
+          <div>
+            <div class="ag-name">Deployer</div>
+            <div class="ag-sub">Jinja2 · CI/CD · Vault JIT</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:#555;margin-bottom:4px"><b>6 outils :</b></div>
+        <span class="tp o">check_deployment_readiness</span>
+        <span class="tp o">get_deployment_context</span>
+        <span class="tp o">render_deploy_template</span>
+        <span class="tp o">generate_cicd_pipeline</span>
+        <span class="tp o">gen_deploy_report</span>
+        <span class="tp o">gen_rollback_report</span>
+        <div style="margin-top:7px;font-size:10px;color:#555;line-height:1.5">
+          Jinja2 → <b>deploy.sh</b> (set -e · no hardcoded creds)<br>
+          GitHub Actions <b>deploy.yml</b> · Atlantis.yaml<br>
+          migration_report.json · README
+        </div>
+        <div class="ag-metric" style="background:#FEF9EC;color:var(--orange)">
+          🔒 Vault JIT · 0 secret en base · PR auto
+        </div>
+        <div style="margin-top:5px">
+          <span class="hitl" style="font-size:9px;padding:2px 8px">HITL wait_runner</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="out-bar anim" id="ob">
+      <b style="color:var(--blue-light)">OUTPUT :</b>
+      <span class="ob-tag">main.tf</span>
+      <span class="ob-tag">variables.tf</span>
+      <span class="ob-tag">network.tf</span>
+      <span class="ob-tag">outputs.tf</span>
+      <span class="ob-tag">provider.tf</span>
+      <span class="ob-tag">deploy.sh</span>
+      <span class="ob-tag">deploy.yml</span>
+      <span class="ob-tag">atlantis.yaml</span>
+      <span class="ob-tag">migration_report.json</span>
+      <span style="margin-left:auto;background:var(--green);padding:2px 10px;
+        border-radius:5px;font-weight:700;font-size:10.5px">+ Export ZIP · PR GitHub feat/cloud-migration</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 4 ─ DONNÉES & SÉCURITÉ                                  -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s4">
+  <div class="sh">
+    <div class="sh-icon">🗃️</div>
+    <div class="sh-text">
+      <h1>Couche Données &amp; Sécurité</h1>
+      <p>PostgreSQL 16 + pgvector · Graph RAG Neo4j · HashiCorp Vault JIT · RBAC Zero Trust</p>
+    </div>
+    <div class="sh-cnt">4 / 5</div>
+  </div>
+  <div class="sb">
+    <div class="three-col">
+
+      <!-- COL 1 : PostgreSQL -->
+      <div class="col3">
+        <div class="dc nv anim" id="dc1">
+          <div class="dt">🖥 PostgreSQL 16 + pgvector</div>
+          <div class="db">Persistance du pipeline &amp; état LangGraph</div>
+          <table class="mini-t">
+            <tr><th>Table</th><th>Rôle</th></tr>
+            <tr><td>migrations</td><td>État pipeline complet</td></tr>
+            <tr><td>pipeline_state</td><td>Checkpoint LangGraph</td></tr>
+            <tr><td>pipeline_events</td><td>Audit &amp; SSE log</td></tr>
+            <tr><td>runner_jobs</td><td>Queue déploiement</td></tr>
+            <tr><td>deployment_logs</td><td>Historique runs</td></tr>
+            <tr><td>rag_messages</td><td>Historique chatbot</td></tr>
+            <tr><td>terraform_resources</td><td>Embeddings pgvector</td></tr>
+            <tr><td>resource_relations</td><td>DEPENDS_ON graph</td></tr>
+            <tr><td>migration_secrets</td><td>0 secret clair · Vault</td></tr>
+          </table>
+          <div style="margin-top:6px">
+            <span class="dtag">SQLAlchemy async</span>
+            <span class="dtag">Alembic</span>
+            <span class="dtag">pgvector</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COL 2 : Graph RAG -->
+      <div class="col3">
+        <div class="dc tn anim" id="dc2">
+          <div class="dt">🌐 Graph RAG — 3 signaux combinés</div>
+          <div class="db">Génération IaC contextuelle · 84% correctness</div>
+          <table class="mini-t" style="margin-top:7px">
+            <tr><th>Signal</th><th>Technologie</th></tr>
+            <tr><td><b>Similarité</b></td><td>pgvector cosine · chunks Terraform</td></tr>
+            <tr><td><b>Traversée graphe</b></td><td>DEPENDS_ON / COMPANION multi-hop · Neo4j Cypher</td></tr>
+            <tr><td><b>Arguments</b></td><td>HAS_ARGUMENT · is_required true/false</td></tr>
+            <tr><td><b>Patterns</b></td><td>hcl_canonical_patterns · templates validés</td></tr>
+          </table>
+          <div style="margin-top:9px;background:#E8F8F1;border-radius:8px;
+            padding:9px;text-align:center">
+            <div style="font-size:30px;font-weight:900;color:var(--teal)">84%</div>
+            <div style="font-size:10px;color:#555">Correctness Graph RAG · Budget 90 000 chars</div>
+            <div style="font-size:9.5px;color:#777;margin-top:2px">Nekrasov et al., 2025 — Graph-Augmented RAG for IaC Generation</div>
+          </div>
+          <div style="margin-top:7px">
+            <span class="dtag">Neo4j Cypher</span>
+            <span class="dtag">pgvector top_k=15</span>
+            <span class="dtag">Nekrasov 2025</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COL 3 : Vault + RBAC -->
+      <div class="col3">
+        <div class="dc rd anim" id="dc3">
+          <div class="dt">🔒 HashiCorp Vault — Zero Trust</div>
+          <div class="db">Aucun secret ne touche la base de données</div>
+          <div style="margin-top:8px">
+            <div class="vault-step" style="background:#FDECEA">
+              <span>🔑</span><div><b>Demande credentials</b> — Agent 03 demande les clés cloud</div>
+            </div>
+            <div class="vault-arrow">↓</div>
+            <div class="vault-step" style="background:#F3EEF8">
+              <span>🏛</span><div><b>Vault génère token éphémère</b> — JWT avec TTL court · jamais stocké</div>
+            </div>
+            <div class="vault-arrow">↓</div>
+            <div class="vault-step" style="background:#EDF7EE">
+              <span>⚡</span><div><b>Injection mémoire</b> — ARM_CLIENT_ID/SECRET en RAM uniquement</div>
+            </div>
+            <div class="vault-arrow">↓</div>
+            <div class="vault-step" style="background:#E8F4FD">
+              <span>🗑</span><div><b>Destruction immédiate</b> — Token révoqué après exécution · 0 trace</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dc gn anim" id="dc4">
+          <div class="dt">👥 RBAC — Contrôle d'accès par rôle</div>
+          <div class="rbac-grid">
+            <div class="rbac-box" style="background:#EDF7EE">
+              <div class="rb-title" style="color:var(--green)">👑 Administrateur</div>
+              <div>✓ Gestion utilisateurs</div>
+              <div>✓ Journal d'audit global</div>
+              <div>✓ Toutes les migrations</div>
+              <div>✓ Statistiques globales</div>
+            </div>
+            <div class="rbac-box" style="background:#EAF0FB">
+              <div class="rb-title" style="color:var(--navy)">🔧 DevOps</div>
+              <div>✓ Ses propres migrations</div>
+              <div>✓ Suivi ses migrations</div>
+              <div>✗ Audit global</div>
+              <div>✗ HTTP 403 si dépassement</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 5 ─ SERVICES EXTERNES + CLOUD CIBLES                    -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s5">
+  <div class="sh">
+    <div class="sh-icon">☁️</div>
+    <div class="sh-text">
+      <h1>Services Externes &amp; Cloud Cibles</h1>
+      <p>Azure OpenAI · GitHub · Terraform CLI · Checkov · Infracost · Docker Compose · AWS · Azure · GCP</p>
+    </div>
+    <div class="sh-cnt">5 / 5</div>
+  </div>
+  <div class="sb" style="padding:14px 30px 12px">
+
+    <div class="layer l-ext anim" id="le">
+      <div class="lbl">🌐 Services Externes</div>
+      <div class="ext-cards">
+        <div class="card c-orange anim" id="e1">
+          <div class="ct">🤖 Azure OpenAI</div>
+          <div class="cs"><b>gpt-5.1</b> — Agents 01 &amp; 02 (ReAct)<br>
+            <b>gpt-5.4-mini</b> — Agent 03<br>
+            <b>gpt-4o</b> — RAG Chatbot</div>
+          <span class="tag">2025-01-01-preview</span>
+        </div>
+        <div class="card c-orange anim" id="e2">
+          <div class="ct">🐙 GitHub</div>
+          <div class="cs">PyGithub · Clone repos<br>PR push · CI/CD YAML<br>Secrets via Vault → GitHub Actions</div>
+          <span class="tag">PyGithub</span><span class="tag">REST API</span>
+        </div>
+        <div class="card c-orange anim" id="e3">
+          <div class="ct">📄 Terraform CLI</div>
+          <div class="cs">subprocess local · fmt · init · plan · apply<br>MCP IaC service (:8001)<br>terraform validate · plan-to-JSON</div>
+          <span class="tag">subprocess</span><span class="tag">MCP :8001</span>
+        </div>
+        <div class="card c-orange anim" id="e4">
+          <div class="ct">🛡 Checkov + Infracost</div>
+          <div class="cs">Scan sécurité IaC automatique<br>CRITICAL/HIGH → bloquant<br>MEDIUM/LOW → warning<br>Estimation coût mensuel cloud</div>
+          <span class="tag">CRITICAL bloq.</span><span class="tag">Infracost API</span>
+        </div>
+        <div class="card c-orange anim" id="e5">
+          <div class="ct">🐳 Docker Compose</div>
+          <div class="cs">Conteneurisation complète<br>FastAPI · React · PostgreSQL<br>Neo4j · MCP IaC · Vault</div>
+          <span class="tag">multi-service</span><span class="tag">health checks</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tf-arrow anim" id="tfa">
+      terraform apply → Déploiement sur cloud cible sélectionné
+    </div>
+
+    <div class="cloud-row">
+      <div class="cp aws anim-s" id="cp1">
+        <div class="cpn">☁ AWS</div>
+        <div class="cps">EC2 · EKS · RDS · S3 · SageMaker · Lambda · ElastiCache</div>
+        <div class="cpr">us-east-1 · eu-west-1 · ap-southeast-1</div>
+      </div>
+      <div class="cp azure anim-s" id="cp2">
+        <div class="cpn">☁ Microsoft Azure</div>
+        <div class="cps">AKS · App Service · CosmosDB · Azure OpenAI · Azure ML · PostgreSQL Flexible</div>
+        <div class="cpr">westeurope · eastus · francecentral</div>
+      </div>
+      <div class="cp gcp anim-s" id="cp3">
+        <div class="cpn">☁ Google Cloud</div>
+        <div class="cps">GKE · Cloud Run · BigQuery · Vertex AI · Cloud SQL · Pub/Sub</div>
+        <div class="cpr">europe-west1 · us-central1 · asia-east1</div>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;text-align:center;font-size:11px;color:#777;font-style:italic">
+      Neutralité multi-cloud — aucun lock-in fournisseur · Workloads IA supportés : LLM · MLOps · pgvector · GPU
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- NAV -->
+<div id="nav">
+  <button class="nb" id="bp" onclick="go(-1)">←</button>
+  <div class="dots" id="dots"></div>
+  <div class="stag" id="stag">Vue d'ensemble</div>
+  <button class="nb" id="bn" onclick="go(1)">→</button>
+</div>
+<div id="hint">← → flèches clavier · Espace</div>
+<div id="progress"></div>
+
+<script>
+const TOTAL=5;
+const TITLES=["Vue d'ensemble","Présentation & Orchestration","Couche Agents IA","Données & Sécurité","Services Externes & Cloud"];
+let cur=0;
+const slides=document.querySelectorAll('.slide');
+const dotsC=document.getElementById('dots');
+const stag=document.getElementById('stag');
+const prog=document.getElementById('progress');
+
+for(let i=0;i<TOTAL;i++){
+  const d=document.createElement('button');
+  d.className='dot'+(i===0?' active':'');
+  d.onclick=()=>goTo(i);
+  dotsC.appendChild(d);
+}
+
+function updateUI(){
+  document.querySelectorAll('.dot').forEach((d,i)=>d.className='dot'+(i===cur?' active':''));
+  document.getElementById('bp').disabled=cur===0;
+  document.getElementById('bn').disabled=cur===TOTAL-1;
+  stag.textContent=TITLES[cur];
+  prog.style.width=((cur+1)/TOTAL*100)+'%';
+}
+
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+async function show(id,ms=0){
+  await delay(ms);
+  const el=document.getElementById(id);
+  if(el)el.classList.add('visible');
+}
+function showAll(){
+  document.querySelectorAll('.anim,.anim-x,.anim-s').forEach(el=>el.classList.add('visible'));
+}
+
+const anims={
+  0:async()=>{
+    const rows=['ov1','arr1','ov2','arr2','ov3','arr3','ov4','arr4','ov5'];
+    for(let i=0;i<rows.length;i++) await show(rows[i],i*90);
+  },
+  1:async()=>{
+    const ids=['lp1','lp2','lp3','lo1','lo2','lo3','lo4'];
+    for(let i=0;i<ids.length;i++) await show(ids[i],i*110);
+  },
+  2:async()=>{
+    await show('ag0',80);
+    await show('fc1',280);
+    await show('ag1',380);
+    await show('fc2',600);
+    await show('ag2',700);
+    await show('fc3',920);
+    await show('ag3',1020);
+    await show('ob',1300);
+  },
+  3:async()=>{
+    await show('dc1',120);await show('dc2',320);
+    await show('dc3',520);await show('dc4',720);
+  },
+  4:async()=>{
+    await show('le',100);
+    ['e1','e2','e3','e4','e5'].forEach((id,i)=>show(id,200+i*110));
+    await show('tfa',800);
+    await show('cp1',950);await show('cp2',1100);await show('cp3',1250);
+  }
+};
+
+function resetAll(){
+  document.querySelectorAll('.anim,.anim-x,.anim-s').forEach(el=>el.classList.remove('visible'));
+}
+
+function goTo(idx){
+  slides[cur].classList.remove('active');
+  cur=idx;
+  slides[cur].classList.add('active');
+  updateUI();
+  resetAll();
+  setTimeout(()=>anims[cur](),80);
+}
+
+function go(dir){
+  const n=cur+dir;
+  if(n<0||n>=TOTAL)return;
+  goTo(n);
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='Enter')go(1);
+  if(e.key==='ArrowLeft')go(-1);
+});
+
+/* Public helper used by capture script */
+window.goTo=goTo;
+window.showAll=showAll;
+
+updateUI();
+setTimeout(()=>anims[0](),150);
+</script>
+</body>
+</html>

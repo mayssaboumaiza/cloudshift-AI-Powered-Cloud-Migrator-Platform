@@ -1,0 +1,89 @@
+# Core dependencies
+python-dotenv>=1.0.0
+pyyaml>=6.0
+jinja2>=3.1.0
+
+# Security
+python-jose[cryptography]>=3.3.0  # JWT token creation and verification
+bcrypt>=4.0.0                     # Password hashing
+email-validator>=2.0.0            # Pydantic EmailStr validation
+cryptography>=41.0.0        # Fernet encryption for GitHub tokens
+hvac>=2.3.0                  # HashiCorp Vault client (credential storage)
+slowapi>=0.1.9               # Rate limiting for FastAPI
+
+# Observability
+prometheus-fastapi-instrumentator>=6.1.0  # Prometheus /metrics endpoint
+
+# Schema migrations
+alembic>=1.13.0              # DB schema versioning (replaces create_all)
+
+# FastAPI & ASGI
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Database
+SQLAlchemy>=2.0.0
+SQLAlchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+psycopg2-binary>=2.9.0
+
+# LangChain & LLM
+# LangGraph 1.x API notes:
+#   - create_react_agent: use prompt= parameter (not messages_modifier=)
+#   - SystemMessage must NOT be prepended to messages list — pass via prompt=
+#   - All 3 agents (planner, generator, deployer) already use prompt= correctly
+langchain>=0.3.0,<0.4.0
+langchain-core>=0.3.0,<0.4.0
+langchain-openai>=0.3.0,<0.4.0
+langgraph>=0.2.0,<0.3.0
+langgraph-checkpoint-postgres>=2.0.0,<3.0.0
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.11.0
+
+# MCP & async
+mcp>=1.0.0
+httpx>=0.27.0
+cachetools>=5.3.0
+aiohttp>=3.8.0
+aiosmtplib>=3.0.0
+
+# Error handling & retry logic
+tenacity>=8.2.0
+
+# GitHub & Git utilities
+PyGithub>=2.1.0
+requests>=2.31.0
+
+# IaC parsing & validation
+python-hcl2>=4.3.0
+networkx>=3.0
+# Note: checkov is a CLI tool (not a Python package) — install separately or via Docker
+
+# AWS services (for cloud_news_mcp, cloud_target_mcp)
+boto3>=1.26.0
+
+# GCP services (for cloud_news_mcp, cloud_target_mcp)
+google-cloud-compute>=1.13.0
+google-cloud-monitoring>=2.15.0
+
+# Azure services (for cloud_target_mcp)
+azure-identity>=1.13.0
+azure-mgmt-authorization>=4.0.0
+azure-mgmt-compute>=30.0.0
+azure-mgmt-subscription>=3.0.0
+azure-mgmt-resource>=23.0.0
+azure-mgmt-network>=25.0.0
+azure-mgmt-monitor>=6.0.0          # Azure Monitor metrics (infra_monitor.get_metrics)
+
+
+# Graph RAG — Terraform knowledge base (Agent 02, pgvector-backed)
+sentence-transformers>=2.2.0,<3.0.0
+pgvector>=0.2.5
+neo4j>=5.19,<6.0          # Bolt driver for Neo4j graph traversal (Cypher)
+
+

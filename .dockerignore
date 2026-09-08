@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+
+# Logs
+logs/
+*.log
+
+# Outputs lourds
+output/
+output2/
+
+# Git
+.git/
+
+# IDE
+.vscode/
+.idea/
+
+# Frontend (important!)
+frontend/node_modules/
+
+# DB / env
+.env
+*.sqlite
+*.db
+
+# cache
+.cache/

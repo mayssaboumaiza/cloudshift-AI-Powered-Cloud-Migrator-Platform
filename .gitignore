@@ -1,0 +1,114 @@
+########################
+# Python
+########################
+
+__pycache__/
+*.py[cod]
+*.so
+
+########################
+# Virtual Environment
+########################
+
+.venv/
+venv/
+env/
+
+########################
+# Pytest
+########################
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+########################
+# IDE
+########################
+
+.idea/
+.vscode/
+
+########################
+# Environment Variables
+########################
+
+.env
+.env.*
+!.env.example
+
+########################
+# Secrets
+########################
+
+# Local secret/config files
+secrets/
+.secrets/
+*.secret
+*.secrets
+
+# Credentials
+credentials.json
+credentials.yaml
+credentials.yml
+service-account.json
+service-account-key.json
+
+# Private keys / certificates
+*.pem
+*.key
+*.p12
+*.pfx
+
+########################
+# Logs
+########################
+
+*.log
+logs/
+
+########################
+# Output
+########################
+
+output/
+
+########################
+# Database
+########################
+
+*.db
+*.sqlite
+*.sqlite3
+
+########################
+# Vault local data
+########################
+
+vault/
+
+########################
+# Node
+########################
+
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+########################
+# OS
+########################
+
+.DS_Store
+Thumbs.db
+
+########################
+# Test script containing previous GitHub token
+########################
+
+scripts/create_test_repos.py
+########################
+# Application credentials
+########################
+
+data/credentials/

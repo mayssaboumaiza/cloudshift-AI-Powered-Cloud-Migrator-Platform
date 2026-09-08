@@ -1,0 +1,190 @@
+[
+  {
+    "source": "aws_s3_bucket",
+    "target": "google_storage_bucket",
+    "measured_similarity": 0.95,
+    "expected_strategy": "REHOST",
+    "expected_certainty": "high",
+    "confidence_zone": "certain",
+    "breaking_changes": [],
+    "effort_days_estimate": "1-3",
+    "note": "Near-identical object storage semantics — list-objects, lifecycle, versioning, ACLs all map directly. Only SDK import changes (boto3 → google-cloud-storage)."
+  },
+  {
+    "source": "aws_s3_bucket",
+    "target": "azurerm_storage_account",
+    "measured_similarity": 0.89,
+    "expected_strategy": "REPLATFORM",
+    "expected_certainty": "high",
+    "confidence_zone": "certain",
+    "breaking_changes": [
+      {"severity": "MEDIUM", "pattern": "boto3.client('s3')", "replacement": "BlobServiceClient"}
+    ],
+    "effort_days_estimate": "3-7",
+    "note": "Container model differs from bucket model; SDK change required. Lifecycle policies have different DSL."
+  },
+  {
+    "source": "aws_lambda_function",
+    "target": "google_cloudfunctions_function",
+    "measured_similarity": 0.89,
+    "expected_strategy": "REPLATFORM",
+    "expected_certainty": "high",
+    "confidence_zone": "certain",
+    "breaking_changes": [
+      {"severity": "HIGH", "pattern": "import boto3", "replacement": "from google.cloud import ..."},
+      {"severity": "MEDIUM", "pattern": "event['Records']", "replacement": "Cloud Event format"}
+    ],
+    "effort_days_estimate": "5-12",
+    "note": "Equivalent serverless model but trigger syntax and SDK differ. Handler signature changes."
+  },
+  {
+    "source": "aws_lambda_function",
+    "target": "azurerm_linux_function_app",
+    "measured_similarity": 0.92,
+    "expected_strategy": "REHOST",
+    "expected_certainty": "medium",
+    "confidence_zone": "gray_zone",
+    "trigger_ask_human": true,
+    "breaking_changes": [],
+    "effort_days_estimate": "3-8",
+    "note": "Gray zone [0.90-0.95]: likely REHOST but App Service Plan setup and binding syntax differ from Lambda triggers."
+  },
+  {
+    "source": "aws_rds_cluster",
+    "target": "azurerm_postgresql_flexible_server",
+    "measured_similarity": 0.87,
+    "expected_strategy": "REPLATFORM",
+    "expected_certainty": "high",
+    "confidence_zone": "certain",
+    "breaking_changes": [
+      {"severity": "HIGH", "pattern": "pymysql / mysql-connector", "replacement": "psycopg2"},
+      {"severity": "MEDIUM", "pattern": "Aurora-specific stored procs", "replacement": "PostgreSQL dialect"}
+    ],
+    "effort_days_estimate": "8-15",
+    "note": "PostgreSQL-compatible target: driver change, some Aurora-specific features unsupported. Data migration required (+5 days)."
+  },
+  {
+    "source": "aws_rds_cluster",
+    "target": "google_sql_database_instance",
+    "measured_similarity": 0.84,
+    "expected_strategy": "REPLATFORM",
+    "expected_certainty": "high",
+    "confidence_zone": "certain",
+    "breaking_changes": [
+      {"severity": "HIGH", "pattern": "RDS endpoint", "replacement": "Cloud SQL proxy or public IP"},
+      {"severity": "MEDIUM", "pattern": "Multi-AZ failover config", "replacement": "HA instance config"}
+    ],
+    "effort_days_estimate": "8-15",
+    "note": "Cloud SQL supports MySQL/PostgreSQL/SQL Server but connection model differs (proxy recommended)."
+  },
+  {
+    "source": "aws_rds_cluster",
+    "target": "google_firestore_document",
+    "measured_similarity": 0.71,
+    "expected_strategy": "REFACTOR",
+    "expected_certainty": "high",
+    "confidence_zone": "certain",
+    "breaking_changes": [
+      {"severity": "CRITICAL", "pattern": "SQL schema + ACID transactions", "replacement": "NoSQL document model — schema redesign required"},
+      {"severity": "CRITICAL", "pattern": "JOINs, foreign keys", "replacement": "Denormalized documents or client-side joins"}
+    ],
+    "effort_days_estimate": "15-30",
+    "note": "Relational ACID → Document NoSQL — fundamental architectural redesign required."
+  },
+  {
+    "source": "aws_iam_role",
+    "target": "azurerm_user_assigned_identity",
+    "measured_similarity": 0.74,
+    "expected_strategy": "REFACTOR",
+    "expected_certainty": "high",
+    "confidence_zone": "certain",
+    "breaking_changes": [
+      {"severity": "CRITICAL", "pattern": "IAM role + policy attachment", "replacement": "Managed Identity + RBAC role assignment"},
+      {"severity": "HIGH", "pattern": "AssumeRole trust policy", "replacement": "Azure RBAC + Entra ID service principal"}
+    ],
+    "effort_days_estimate": "10-20",
+    "note": "AWS IAM model (role → policy → permission) fundamentally differs from Azure RBAC (identity → role assignment → scope)."
+  },
+  {
+    "source": "aws_dynamodb_table",
+    "target": "azurerm_cosmosdb_account",
+    "measured_similarity": 0.81,
+    "expected_strategy": "REPLATFORM",
+    "expected_certainty": "medium",
+    "confidence_zone": "gray_zone",
+    "trigger_ask_human": true,
+    "breaking_changes": [
+      {"severity": "HIGH", "pattern": "DynamoDB SDK (boto3)", "replacement": "Cosmos DB SDK or Table API"},
+      {"severity": "HIGH", "pattern": "Partition key / sort key model", "replacement": "Cosmos partition key (same concept, different config)"}
+    ],
+    "effort_days_estimate": "10-18",
+    "note": "Gray zone [0.78-0.82]: Cosmos supports DynamoDB-compatible Table API but native SDK differs. Multi-model Cosmos may offer a better migration path."
+  },
+  {
+    "source": "aws_eks_cluster",
+    "target": "azurerm_kubernetes_cluster",
+    "measured_similarity": 0.96,
+    "expected_strategy": "REHOST",
+    "expected_certainty": "high",
+    "confidence_zone": "certain",
+    "breaking_changes": [
+      {"severity": "LOW", "pattern": "aws-auth ConfigMap", "replacement": "Azure AD RBAC integration"},
+      {"severity": "LOW", "pattern": "IAM roles for service accounts", "replacement": "AAD pod identity / workload identity"}
+    ],
+    "effort_days_estimate": "3-7",
+    "note": "Kubernetes API is cloud-agnostic. Only cloud-specific integrations (IAM, load balancer annotations) need updating."
+  },
+
+  {"_comment": "---- v2 pairs (3-signal: similarity + sdk_calls + breaking_changes) ----"},
+
+  {
+    "source": "aws_s3_bucket",
+    "target": "google_storage_bucket",
+    "measured_similarity": 0.95,
+    "sdk_calls": 2,
+    "breaking_changes": [],
+    "expected_strategy": "REHOST",
+    "expected_certainty": "high",
+    "combined_score_approx": 0.93,
+    "note": "High similarity, minimal SDK calls, no breaks → REHOST certain."
+  },
+  {
+    "source": "aws_lambda_function",
+    "target": "google_cloudfunctions_function",
+    "measured_similarity": 0.89,
+    "sdk_calls": 8,
+    "breaking_changes": [{"severity": "MINOR"}],
+    "expected_strategy": "REPLATFORM",
+    "expected_certainty": "high",
+    "combined_score_approx": 0.75,
+    "note": "Moderate similarity + moderate SDK rewrites + 1 minor break → REPLATFORM."
+  },
+  {
+    "source": "aws_rds_cluster",
+    "target": "google_firestore_document",
+    "measured_similarity": 0.71,
+    "sdk_calls": 15,
+    "breaking_changes": [
+      {"severity": "CRITICAL"},
+      {"severity": "CRITICAL"},
+      {"severity": "CRITICAL"}
+    ],
+    "expected_strategy": "REFACTOR",
+    "expected_certainty": "high",
+    "forced_by": "3x CRITICAL breaking changes",
+    "note": "3 CRITICAL breaks force REFACTOR regardless of combined score."
+  },
+  {
+    "source": "aws_cloudwatch_log_group",
+    "target": "azurerm_log_analytics_workspace",
+    "measured_similarity": 0.83,
+    "sdk_calls": 4,
+    "breaking_changes": [],
+    "expected_strategy": "REHOST",
+    "expected_certainty": "medium",
+    "trigger_ask_human": true,
+    "confidence_zone": "gray_zone",
+    "combined_score_approx": 0.855,
+    "note": "Gray zone [0.82-0.88]: combined score suggests REHOST but config differences warrant human confirmation."
+  }
+]

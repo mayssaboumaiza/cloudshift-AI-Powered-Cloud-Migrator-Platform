@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slide 1 — Problématique</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #ffffff;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+      color: #1e293b;
+    }
+    .slide {
+      width: 1200px; min-height: 675px;
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 56px 64px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 40px 120px rgba(0,0,0,0.6);
+    }
+    /* decorative circles */
+    .slide::before {
+      content: '';
+      position: absolute; top: -120px; right: -120px;
+      width: 420px; height: 420px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
+    }
+    .slide::after {
+      content: '';
+      position: absolute; bottom: -80px; left: -80px;
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(14,165,233,0.12) 0%, transparent 70%);
+    }
+
+    .label {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.15em;
+      text-transform: uppercase; color: #6366f1;
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-size: 42px; font-weight: 800; line-height: 1.18;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+    h1 span { color: #6366f1; }
+    .subtitle {
+      font-size: 17px; color: #475569; margin-bottom: 40px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 36px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 22px 20px;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+    .card-icon {
+      font-size: 28px; margin-bottom: 10px;
+    }
+    .card-title {
+      font-size: 13.5px; font-weight: 700; color: #1e293b;
+      margin-bottom: 6px;
+    }
+    .card-body {
+      font-size: 12.5px; color: #475569; line-height: 1.55;
+    }
+    .card.red   { border-left: 3px solid #ef4444; }
+    .card.amber { border-left: 3px solid #f59e0b; }
+    .card.blue  { border-left: 3px solid #3b82f6; }
+
+    .bottom-row {
+      display: flex; gap: 18px; align-items: stretch;
+    }
+    .stat-box {
+      flex: 1;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 10px;
+      padding: 16px 18px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 30px; font-weight: 800; color: #818cf8;
+    }
+    .stat-label {
+      font-size: 11.5px; color: #475569; margin-top: 4px; line-height: 1.4;
+    }
+
+    .question-box {
+      flex: 2;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 10px;
+      padding: 18px 22px;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .question-box .q-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #38bdf8; margin-bottom: 8px;
+    }
+    .question-box p {
+      font-size: 15px; font-weight: 600; color: #0c4a6e; line-height: 1.5;
+    }
+
+    .slide-num {
+      position: absolute; bottom: 24px; right: 32px;
+      font-size: 12px; color: #64748b; font-weight: 600;
+    }
+    .talan-tag {
+      position: absolute; top: 24px; right: 32px;
+      font-size: 11px; font-weight: 700; color: #64748b;
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+<div class="slide">
+  <div class="talan-tag">Talan Tunisie · Data&amp;AI · 2025–2026</div>
+
+  <div class="label">Contexte &amp; Problématique</div>
+  <h1>La migration cloud :<br /><span>un processus encore trop manuel</span></h1>
+  <p class="subtitle">Pourquoi automatiser l'intelligence de migration inter-cloud ?</p>
+
+  <div class="grid">
+    <div class="card red">
+      <div class="card-icon">⏳</div>
+      <div class="card-title">Processus long &amp; coûteux</div>
+      <div class="card-body">
+        Une migration d'application multi-services vers le cloud demande plusieurs semaines
+        d'analyse manuelle, d'architecture cible, de génération IaC et de validation sécurité.
+      </div>
+    </div>
+    <div class="card amber">
+      <div class="card-icon">🧩</div>
+      <div class="card-title">Multiplicité des décisions</div>
+      <div class="card-body">
+        Choix du cloud cible (AWS / Azure / GCP), de la stratégie 7R (Rehost, Refactor…),
+        de la région, du budget, des contraintes réglementaires — chaque décision est imbriquée.
+      </div>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">🤖</div>
+      <div class="card-title">Stacks AI : un cas particulier</div>
+      <div class="card-body">
+        Les applications d'IA embarquent des SDKs LLM, des bases vectorielles, des
+        orchestrateurs (LangChain…) — des dépendances invisibles dans les fichiers IaC classiques.
+      </div>
+    </div>
+    <div class="card red">
+      <div class="card-icon">🔒</div>
+      <div class="card-title">Sécurité &amp; conformité</div>
+      <div class="card-body">
+        Les IaC générés manuellement sont rarement scannés (Checkov, tflint) avant déploiement,
+        exposant des failles CRITICAL/HIGH en production.
+      </div>
+    </div>
+    <div class="card amber">
+      <div class="card-icon">💸</div>
+      <div class="card-title">Dérive budgétaire</div>
+      <div class="card-body">
+        Sans estimation précise (Infracost) et sans scoring multicritère (AHP), le coût réel
+        cloud cible dépasse souvent le budget prévu de 30 à 60 %.
+      </div>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">🔄</div>
+      <div class="card-title">Absence de boucle de correction</div>
+      <div class="card-body">
+        Aucun outil ne propose une boucle LLM auto-correctrice : si le IaC généré est invalide,
+        l'ingénieur reprend à zéro manuellement.
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-row">
+    <div class="stat-box">
+      <div class="stat-num">7R</div>
+      <div class="stat-label">stratégies à décider<br />par ressource</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">3+</div>
+      <div class="stat-label">providers cloud<br />à comparer</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">∞</div>
+      <div class="stat-label">combinaisons<br />région × service × budget</div>
+    </div>
+    <div class="question-box">
+      <div class="q-label">Question de recherche</div>
+      <p>
+        Comment concevoir un système multi-agents capable d'automatiser
+        intelligemment l'intégralité du processus de migration cloud —
+        de l'analyse du repo GitHub jusqu'au déploiement — tout en intégrant
+        le jugement humain au bon moment ?
+      </p>
+    </div>
+  </div>
+
+  <div class="slide-num">1 / 2</div>
+</div>
+</body>
+</html>

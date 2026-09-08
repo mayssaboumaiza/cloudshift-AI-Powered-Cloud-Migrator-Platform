@@ -1,0 +1,186 @@
+[
+  {
+    "id": "azure-001",
+    "provider": "azurerm",
+    "resource_type": "azurerm_storage_account",
+    "expected_keywords": ["account_tier", "account_replication_type", "https_traffic_only_enabled", "min_tls_version"],
+    "must_not_contain_provider": ["aws_", "google_"],
+    "description": "Azure Storage Account — core attributes"
+  },
+  {
+    "id": "azure-002",
+    "provider": "azurerm",
+    "resource_type": "azurerm_postgresql_flexible_server",
+    "expected_keywords": ["administrator_login", "administrator_password", "sku_name", "delegated_subnet_id"],
+    "must_not_contain_provider": ["aws_", "google_"],
+    "description": "Azure PostgreSQL Flexible Server — delegation required"
+  },
+  {
+    "id": "azure-003",
+    "provider": "azurerm",
+    "resource_type": "azurerm_cognitive_account",
+    "expected_keywords": ["kind", "sku_name", "local_auth_enabled", "public_network_access_enabled"],
+    "must_not_contain_provider": ["aws_", "google_"],
+    "description": "Azure Cognitive Services account"
+  },
+  {
+    "id": "azure-004",
+    "provider": "azurerm",
+    "resource_type": "azurerm_linux_virtual_machine",
+    "expected_keywords": ["admin_username", "size", "os_disk", "network_interface_ids"],
+    "must_not_contain_provider": ["aws_", "google_"],
+    "description": "Azure Linux VM"
+  },
+  {
+    "id": "azure-005",
+    "provider": "azurerm",
+    "resource_type": "azurerm_kubernetes_cluster",
+    "expected_keywords": ["dns_prefix", "default_node_pool", "identity"],
+    "must_not_contain_provider": ["aws_", "google_"],
+    "description": "Azure AKS cluster"
+  },
+  {
+    "id": "azure-006",
+    "provider": "azurerm",
+    "resource_type": "azurerm_virtual_network",
+    "expected_keywords": ["address_space", "location", "resource_group_name"],
+    "must_not_contain_provider": ["aws_", "google_"],
+    "description": "Azure Virtual Network"
+  },
+  {
+    "id": "azure-007",
+    "provider": "azurerm",
+    "resource_type": "azurerm_user_assigned_identity",
+    "expected_keywords": ["location", "resource_group_name"],
+    "must_not_contain_provider": ["aws_", "google_"],
+    "description": "Azure User Assigned Managed Identity"
+  },
+  {
+    "id": "azure-008",
+    "provider": "azurerm",
+    "resource_type": "azurerm_mysql_flexible_server",
+    "expected_keywords": ["administrator_login", "administrator_password", "sku_name"],
+    "must_not_contain_provider": ["aws_", "google_"],
+    "description": "Azure MySQL Flexible Server"
+  },
+  {
+    "id": "azure-009",
+    "provider": "azurerm",
+    "resource_type": "azurerm_servicebus_namespace",
+    "expected_keywords": ["sku", "location", "resource_group_name"],
+    "must_not_contain_provider": ["aws_", "google_"],
+    "description": "Azure Service Bus Namespace"
+  },
+  {
+    "id": "azure-010",
+    "provider": "azurerm",
+    "resource_type": "azurerm_log_analytics_workspace",
+    "expected_keywords": ["retention_in_days", "sku", "location"],
+    "must_not_contain_provider": ["aws_", "google_"],
+    "description": "Azure Log Analytics Workspace"
+  },
+  {
+    "id": "aws-001",
+    "provider": "aws",
+    "resource_type": "aws_s3_bucket",
+    "expected_keywords": ["bucket", "tags"],
+    "must_not_contain_provider": ["azurerm_", "google_"],
+    "description": "AWS S3 Bucket"
+  },
+  {
+    "id": "aws-002",
+    "provider": "aws",
+    "resource_type": "aws_db_instance",
+    "expected_keywords": ["engine", "instance_class", "username", "password"],
+    "must_not_contain_provider": ["azurerm_", "google_"],
+    "description": "AWS RDS DB Instance"
+  },
+  {
+    "id": "aws-003",
+    "provider": "aws",
+    "resource_type": "aws_lambda_function",
+    "expected_keywords": ["function_name", "handler", "runtime", "role"],
+    "must_not_contain_provider": ["azurerm_", "google_"],
+    "description": "AWS Lambda Function"
+  },
+  {
+    "id": "aws-004",
+    "provider": "aws",
+    "resource_type": "aws_eks_cluster",
+    "expected_keywords": ["name", "role_arn", "vpc_config"],
+    "must_not_contain_provider": ["azurerm_", "google_"],
+    "description": "AWS EKS Cluster"
+  },
+  {
+    "id": "aws-005",
+    "provider": "aws",
+    "resource_type": "aws_vpc",
+    "expected_keywords": ["cidr_block"],
+    "must_not_contain_provider": ["azurerm_", "google_"],
+    "description": "AWS VPC"
+  },
+  {
+    "id": "gcp-001",
+    "provider": "google",
+    "resource_type": "google_storage_bucket",
+    "expected_keywords": ["name", "location", "uniform_bucket_level_access"],
+    "must_not_contain_provider": ["azurerm_", "aws_"],
+    "description": "GCP Cloud Storage Bucket"
+  },
+  {
+    "id": "gcp-002",
+    "provider": "google",
+    "resource_type": "google_sql_database_instance",
+    "expected_keywords": ["database_version", "settings", "tier"],
+    "must_not_contain_provider": ["azurerm_", "aws_"],
+    "description": "GCP Cloud SQL Instance"
+  },
+  {
+    "id": "gcp-003",
+    "provider": "google",
+    "resource_type": "google_compute_instance",
+    "expected_keywords": ["machine_type", "boot_disk", "network_interface"],
+    "must_not_contain_provider": ["azurerm_", "aws_"],
+    "description": "GCP Compute Engine Instance"
+  },
+  {
+    "id": "gcp-004",
+    "provider": "google",
+    "resource_type": "google_container_cluster",
+    "expected_keywords": ["name", "location", "node_config"],
+    "must_not_contain_provider": ["azurerm_", "aws_"],
+    "description": "GCP GKE Cluster"
+  },
+  {
+    "id": "gcp-005",
+    "provider": "google",
+    "resource_type": "google_compute_network",
+    "expected_keywords": ["name", "auto_create_subnetworks"],
+    "must_not_contain_provider": ["azurerm_", "aws_"],
+    "description": "GCP VPC Network"
+  },
+  {
+    "id": "cross-provider-001",
+    "provider": "azurerm",
+    "resource_type": "azurerm_app_service_plan",
+    "expected_keywords": ["os_type", "sku_name"],
+    "must_not_contain_provider": ["aws_", "google_"],
+    "description": "Cross-provider isolation test: Azure App Service Plan must not return AWS/GCP docs"
+  },
+  {
+    "id": "cross-provider-002",
+    "provider": "aws",
+    "resource_type": "aws_iam_role",
+    "expected_keywords": ["name", "assume_role_policy"],
+    "must_not_contain_provider": ["azurerm_", "google_"],
+    "description": "Cross-provider isolation test: AWS IAM Role must not return Azure/GCP docs"
+  },
+  {
+    "id": "cross-provider-003",
+    "provider": "google",
+    "resource_type": "google_project_iam_member",
+    "expected_keywords": ["project", "role", "member"],
+    "must_not_contain_provider": ["azurerm_", "aws_"],
+    "description": "Cross-provider isolation test: GCP IAM member must not return Azure/AWS docs"
+  }
+]

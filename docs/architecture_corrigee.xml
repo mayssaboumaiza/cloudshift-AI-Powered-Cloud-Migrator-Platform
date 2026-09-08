@@ -1,0 +1,297 @@
+<mxGraphModel dx="1600" dy="900" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1300" pageHeight="900" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- TITRE -->
+    <mxCell id="titre" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#2C3E50;" value="Architecture Technique — CloudShift" vertex="1">
+      <mxGeometry height="32" width="1160" x="70" y="10" as="geometry" />
+    </mxCell>
+
+    <!-- ===== COUCHE 1 : PRÉSENTATION ===== -->
+    <mxCell id="L1_bg" parent="1" style="rounded=1;arcSize=3;fillColor=#DDEEFF;strokeColor=#6BAED6;strokeWidth=1.5;verticalAlign=top;fontSize=10;fontStyle=1;fontColor=#2166AC;align=left;spacingLeft=8;" value="PRÉSENTATION" vertex="1">
+      <mxGeometry height="100" width="1160" x="70" y="50" as="geometry" />
+    </mxCell>
+    <mxCell id="fe_react" parent="1" style="rounded=1;arcSize=20;fillColor=#C6DCEF;strokeColor=#6BAED6;strokeWidth=1.2;fontColor=#08306B;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="React 18 + Vite&#xa;:3000" vertex="1">
+      <mxGeometry height="64" width="170" x="90" y="68" as="geometry" />
+    </mxCell>
+    <mxCell id="fe_dash" parent="1" style="rounded=1;arcSize=20;fillColor=#C6DCEF;strokeColor=#6BAED6;strokeWidth=1.2;fontColor=#08306B;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="Migration Dashboard&#xa;Source · Target · Timeline · IaC" vertex="1">
+      <mxGeometry height="64" width="220" x="285" y="68" as="geometry" />
+    </mxCell>
+    <mxCell id="fe_hitl" parent="1" style="rounded=1;arcSize=20;fillColor=#FFE4B5;strokeColor=#F5A623;strokeWidth=2;fontColor=#7B4A00;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="Human-in-the-Loop (3 points)&#xa;Validation · Correction · Sélection services" vertex="1">
+      <mxGeometry height="64" width="270" x="530" y="68" as="geometry" />
+    </mxCell>
+    <mxCell id="fe_chat" parent="1" style="rounded=1;arcSize=20;fillColor=#C6DCEF;strokeColor=#6BAED6;strokeWidth=1.2;fontColor=#08306B;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="RAG Chatbot&#xa;Assistant conversationnel (gpt-4o)" vertex="1">
+      <mxGeometry height="64" width="220" x="830" y="68" as="geometry" />
+    </mxCell>
+
+    <!-- ===== COUCHE 2 : ORCHESTRATION ===== -->
+    <mxCell id="L2_bg" parent="1" style="rounded=1;arcSize=3;fillColor=#D4E6F1;strokeColor=#5B9EC9;strokeWidth=1.5;verticalAlign=top;fontSize=10;fontStyle=1;fontColor=#154360;align=left;spacingLeft=8;" value="ORCHESTRATION" vertex="1">
+      <mxGeometry height="100" width="1160" x="70" y="178" as="geometry" />
+    </mxCell>
+    <mxCell id="api_fastapi" parent="1" style="rounded=1;arcSize=20;fillColor=#B8D4E8;strokeColor=#5B9EC9;strokeWidth=1.2;fontColor=#08306B;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="FastAPI + Uvicorn&#xa;:7777 · JWT/API-Key · Rate Limit · SSE" vertex="1">
+      <mxGeometry height="62" width="230" x="90" y="196" as="geometry" />
+    </mxCell>
+    <mxCell id="api_langgraph" parent="1" style="rounded=1;arcSize=20;fillColor=#B8D4E8;strokeColor=#5B9EC9;strokeWidth=1.2;fontColor=#08306B;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="LangGraph Orchestrateur&#xa;StateGraph · 22 nœuds · 3 interruptions&#xa;recursion_limit 60/40/60" vertex="1">
+      <mxGeometry height="62" width="320" x="345" y="196" as="geometry" />
+    </mxCell>
+    <mxCell id="api_state" parent="1" style="rounded=1;arcSize=20;fillColor=#B8D4E8;strokeColor=#5B9EC9;strokeWidth=1.2;fontColor=#08306B;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="MigrationState (TypedDict)&#xa;Checkpoint PostgreSQL · Alembic" vertex="1">
+      <mxGeometry height="62" width="260" x="690" y="196" as="geometry" />
+    </mxCell>
+
+    <!-- Pipeline nœuds (représentation textuelle dans un bloc) -->
+    <mxCell id="pipe_flow" parent="1" style="rounded=1;arcSize=5;fillColor=#EEF4FF;strokeColor=#5B9EC9;strokeWidth=1;fontColor=#154360;fontSize=9;align=left;verticalAlign=middle;spacingLeft=6;whiteSpace=wrap;" value="detect_changes → analyze_repo → check_analysis → [notify_service_selection → ask_user_services*] → cooldown → build_plan → check_plan → ask_human* → [correct_plan →] generate_iac → validate_intent → validate_iac ↔ fix_targeted → deploy → enqueue_deploy → wait_runner* → health_check → publish_github → END" vertex="1">
+      <mxGeometry height="30" width="1160" x="70" y="266" as="geometry" />
+    </mxCell>
+
+    <!-- ===== COUCHE 3 : AGENTS IA ===== -->
+    <mxCell id="L3_bg" parent="1" style="rounded=1;arcSize=3;fillColor=#EAE4F7;strokeColor=#9B80D0;strokeWidth=1.5;verticalAlign=top;fontSize=10;fontStyle=1;fontColor=#4A235A;align=left;spacingLeft=8;" value="COUCHE AGENTS IA" vertex="1">
+      <mxGeometry height="160" width="1160" x="70" y="316" as="geometry" />
+    </mxCell>
+
+    <!-- Stack Analyzer -->
+    <mxCell id="ag0_bg" parent="1" style="rounded=1;arcSize=8;fillColor=#D9D0F0;strokeColor=#9B80D0;strokeWidth=1.2;verticalAlign=top;fontSize=11;fontStyle=1;fontColor=#4A235A;align=center;spacingTop=4;" value="Stack Analyzer" vertex="1">
+      <mxGeometry height="134" width="230" x="86" y="332" as="geometry" />
+    </mxCell>
+    <mxCell id="ag0_c1" parent="1" style="rounded=1;arcSize=20;fillColor=#B39DDB;strokeColor=none;fontColor=#1A0533;fontSize=10;align=center;whiteSpace=wrap;" value="HCL2 · AST Python · Regex" vertex="1">
+      <mxGeometry height="26" width="206" x="98" y="366" as="geometry" />
+    </mxCell>
+    <mxCell id="ag0_c2" parent="1" style="rounded=1;arcSize=20;fillColor=#C5B8E8;strokeColor=none;fontColor=#1A0533;fontSize=10;align=center;whiteSpace=wrap;" value="LLM enrichment (optionnel)" vertex="1">
+      <mxGeometry height="26" width="206" x="98" y="400" as="geometry" />
+    </mxCell>
+    <mxCell id="ag0_c3" parent="1" style="rounded=1;arcSize=20;fillColor=#C5B8E8;strokeColor=none;fontColor=#1A0533;fontSize=10;align=center;whiteSpace=wrap;" value="GitHub clone · 4 outils AST" vertex="1">
+      <mxGeometry height="26" width="206" x="98" y="434" as="geometry" />
+    </mxCell>
+
+    <!-- Agent 01 -->
+    <mxCell id="ag1_bg" parent="1" style="rounded=1;arcSize=8;fillColor=#D9D0F0;strokeColor=#9B80D0;strokeWidth=1.2;verticalAlign=top;fontSize=11;fontStyle=1;fontColor=#4A235A;align=center;spacingTop=4;" value="Agent 01 — Migration Planner" vertex="1">
+      <mxGeometry height="134" width="260" x="336" y="332" as="geometry" />
+    </mxCell>
+    <mxCell id="ag1_c1" parent="1" style="rounded=1;arcSize=20;fillColor=#B39DDB;strokeColor=none;fontColor=#1A0533;fontSize=10;align=center;whiteSpace=wrap;" value="ReAct prebuilt · gpt-5.1 · 8 outils" vertex="1">
+      <mxGeometry height="26" width="236" x="348" y="366" as="geometry" />
+    </mxCell>
+    <mxCell id="ag1_c2" parent="1" style="rounded=1;arcSize=20;fillColor=#C5B8E8;strokeColor=none;fontColor=#1A0533;fontSize=10;align=center;whiteSpace=wrap;" value="AHP-SAW · 7R · max 3 iter. par batch" vertex="1">
+      <mxGeometry height="26" width="236" x="348" y="400" as="geometry" />
+    </mxCell>
+    <mxCell id="ag1_c3" parent="1" style="rounded=1;arcSize=20;fillColor=#C5B8E8;strokeColor=none;fontColor=#1A0533;fontSize=10;align=center;whiteSpace=wrap;" value="service_registry.yaml · Infracost" vertex="1">
+      <mxGeometry height="26" width="236" x="348" y="434" as="geometry" />
+    </mxCell>
+
+    <!-- Agent 02 -->
+    <mxCell id="ag2_bg" parent="1" style="rounded=1;arcSize=8;fillColor=#D9D0F0;strokeColor=#9B80D0;strokeWidth=1.2;verticalAlign=top;fontSize=11;fontStyle=1;fontColor=#4A235A;align=center;spacingTop=4;" value="Agent 02 — IaC Generator" vertex="1">
+      <mxGeometry height="134" width="260" x="616" y="332" as="geometry" />
+    </mxCell>
+    <mxCell id="ag2_c1" parent="1" style="rounded=1;arcSize=20;fillColor=#B39DDB;strokeColor=none;fontColor=#1A0533;fontSize=10;align=center;whiteSpace=wrap;" value="Hand-rolled ReAct · gpt-5.1 · 4 outils" vertex="1">
+      <mxGeometry height="26" width="236" x="628" y="366" as="geometry" />
+    </mxCell>
+    <mxCell id="ag2_c2" parent="1" style="rounded=1;arcSize=20;fillColor=#C5B8E8;strokeColor=none;fontColor=#1A0533;fontSize=10;align=center;whiteSpace=wrap;" value="Graph RAG · Terraform HCL · SDK migration" vertex="1">
+      <mxGeometry height="26" width="236" x="628" y="400" as="geometry" />
+    </mxCell>
+    <mxCell id="ag2_c3" parent="1" style="rounded=1;arcSize=20;fillColor=#C5B8E8;strokeColor=none;fontColor=#1A0533;fontSize=10;align=center;whiteSpace=wrap;" value="25 fixers déterministes · Checkov" vertex="1">
+      <mxGeometry height="26" width="236" x="628" y="434" as="geometry" />
+    </mxCell>
+
+    <!-- Agent 03 -->
+    <mxCell id="ag3_bg" parent="1" style="rounded=1;arcSize=8;fillColor=#D9D0F0;strokeColor=#9B80D0;strokeWidth=1.2;verticalAlign=top;fontSize=11;fontStyle=1;fontColor=#4A235A;align=center;spacingTop=4;" value="Agent 03 — Deployer" vertex="1">
+      <mxGeometry height="134" width="240" x="896" y="332" as="geometry" />
+    </mxCell>
+    <mxCell id="ag3_c1" parent="1" style="rounded=1;arcSize=20;fillColor=#B39DDB;strokeColor=none;fontColor=#1A0533;fontSize=10;align=center;whiteSpace=wrap;" value="ReAct prebuilt · gpt-5.1 · 6 outils" vertex="1">
+      <mxGeometry height="26" width="216" x="908" y="366" as="geometry" />
+    </mxCell>
+    <mxCell id="ag3_c2" parent="1" style="rounded=1;arcSize=20;fillColor=#C5B8E8;strokeColor=none;fontColor=#1A0533;fontSize=10;align=center;whiteSpace=wrap;" value="Jinja2 · deploy.sh · CI/CD YAML" vertex="1">
+      <mxGeometry height="26" width="216" x="908" y="400" as="geometry" />
+    </mxCell>
+    <mxCell id="ag3_c3" parent="1" style="rounded=1;arcSize=20;fillColor=#C5B8E8;strokeColor=none;fontColor=#1A0533;fontSize=10;align=center;whiteSpace=wrap;" value="DeploymentManifest · TerraformRunner queue" vertex="1">
+      <mxGeometry height="26" width="216" x="908" y="434" as="geometry" />
+    </mxCell>
+
+    <!-- ===== COUCHE 4 : DONNÉES ===== -->
+    <mxCell id="L4_bg" parent="1" style="rounded=1;arcSize=3;fillColor=#D5EEE8;strokeColor=#5BAD9A;strokeWidth=1.5;verticalAlign=top;fontSize=10;fontStyle=1;fontColor=#0B4F3A;align=left;spacingLeft=8;" value="COUCHE DONNÉES" vertex="1">
+      <mxGeometry height="110" width="1160" x="70" y="494" as="geometry" />
+    </mxCell>
+    <mxCell id="db_pg" parent="1" style="rounded=1;arcSize=20;fillColor=#A8D8CB;strokeColor=#5BAD9A;strokeWidth=1.2;fontColor=#0B4F3A;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="PostgreSQL 16 + pgvector&#xa;Checkpoints · Migrations · runner_jobs&#xa;Audit · Secrets (Fernet) · SQLAlchemy async" vertex="1">
+      <mxGeometry height="74" width="280" x="90" y="512" as="geometry" />
+    </mxCell>
+    <mxCell id="db_graph" parent="1" style="rounded=1;arcSize=20;fillColor=#A8D8CB;strokeColor=#5BAD9A;strokeWidth=1.2;fontColor=#0B4F3A;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="Graph RAG&#xa;Neo4j (Cypher) + pgvector fallback SQL&#xa;DEPENDS_ON · COMPANION · HAS_ARGUMENT" vertex="1">
+      <mxGeometry height="74" width="310" x="400" y="512" as="geometry" />
+    </mxCell>
+    <mxCell id="db_vault" parent="1" style="rounded=1;arcSize=20;fillColor=#A8D8CB;strokeColor=#5BAD9A;strokeWidth=1.2;fontColor=#0B4F3A;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="HashiCorp Vault&#xa;AppRole · KV v2 · Secrets JIT&#xa;mission/{id}/azure|aws|gcp|github_token" vertex="1">
+      <mxGeometry height="74" width="290" x="740" y="512" as="geometry" />
+    </mxCell>
+
+    <!-- ===== COUCHE 5 : SERVICES EXTERNES ===== -->
+    <mxCell id="L5_bg" parent="1" style="rounded=1;arcSize=3;fillColor=#FFF3CD;strokeColor=#F5C842;strokeWidth=1.5;verticalAlign=top;fontSize=10;fontStyle=1;fontColor=#6B4E00;align=left;spacingLeft=8;" value="SERVICES EXTERNES" vertex="1">
+      <mxGeometry height="100" width="1160" x="70" y="632" as="geometry" />
+    </mxCell>
+    <mxCell id="ext_azure" parent="1" style="rounded=1;arcSize=20;fillColor=#FFE082;strokeColor=#F5C842;strokeWidth=1.2;fontColor=#4A3000;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="Azure OpenAI&#xa;gpt-5.1 (agents 01/02/03)&#xa;gpt-4o (RAG chatbot)" vertex="1">
+      <mxGeometry height="66" width="230" x="90" y="650" as="geometry" />
+    </mxCell>
+    <mxCell id="ext_github" parent="1" style="rounded=1;arcSize=20;fillColor=#FFE082;strokeColor=#F5C842;strokeWidth=1.2;fontColor=#4A3000;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="GitHub&#xa;PyGithub · clone repos&#xa;PR push · CI/CD YAML" vertex="1">
+      <mxGeometry height="66" width="200" x="350" y="650" as="geometry" />
+    </mxCell>
+    <mxCell id="ext_tf" parent="1" style="rounded=1;arcSize=20;fillColor=#FFE082;strokeColor=#F5C842;strokeWidth=1.2;fontColor=#4A3000;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="Terraform CLI (subprocess)&#xa;validate · fmt · apply&#xa;AWS · Azure · GCP providers" vertex="1">
+      <mxGeometry height="66" width="220" x="578" y="650" as="geometry" />
+    </mxCell>
+    <mxCell id="ext_checkov" parent="1" style="rounded=1;arcSize=20;fillColor=#FFE082;strokeColor=#F5C842;strokeWidth=1.2;fontColor=#4A3000;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="Checkov + Infracost&#xa;Security scanning (subprocess)&#xa;Cost estimation (GraphQL)" vertex="1">
+      <mxGeometry height="66" width="220" x="820" y="650" as="geometry" />
+    </mxCell>
+    <mxCell id="ext_docker" parent="1" style="rounded=1;arcSize=20;fillColor=#FFE082;strokeColor=#F5C842;strokeWidth=1.2;fontColor=#4A3000;fontSize=11;align=center;whiteSpace=wrap;fontStyle=1;" value="Docker Compose&#xa;Conteneurisation complète" vertex="1">
+      <mxGeometry height="66" width="180" x="1062" y="650" as="geometry" />
+    </mxCell>
+
+    <!-- ===== COUCHE 6 : CLOUD CIBLES ===== -->
+    <mxCell id="L6_bg" parent="1" style="rounded=1;arcSize=3;fillColor=#C8EDD8;strokeColor=#4DAA6B;strokeWidth=1.5;verticalAlign=top;fontSize=10;fontStyle=1;fontColor=#0B4F1E;align=left;spacingLeft=8;" value="CLOUD CIBLES" vertex="1">
+      <mxGeometry height="80" width="1160" x="70" y="760" as="geometry" />
+    </mxCell>
+    <mxCell id="cld_aws" parent="1" style="rounded=1;arcSize=20;fillColor=#95D5A8;strokeColor=#4DAA6B;strokeWidth=1.2;fontColor=#0B4F1E;fontSize=16;fontStyle=1;align=center;" value="AWS" vertex="1">
+      <mxGeometry height="44" width="250" x="160" y="778" as="geometry" />
+    </mxCell>
+    <mxCell id="cld_azure_cloud" parent="1" style="rounded=1;arcSize=20;fillColor=#95D5A8;strokeColor=#4DAA6B;strokeWidth=1.2;fontColor=#0B4F1E;fontSize=16;fontStyle=1;align=center;" value="Microsoft Azure" vertex="1">
+      <mxGeometry height="44" width="250" x="525" y="778" as="geometry" />
+    </mxCell>
+    <mxCell id="cld_gcp" parent="1" style="rounded=1;arcSize=20;fillColor=#95D5A8;strokeColor=#4DAA6B;strokeWidth=1.2;fontColor=#0B4F1E;fontSize=16;fontStyle=1;align=center;" value="Google Cloud" vertex="1">
+      <mxGeometry height="44" width="250" x="890" y="778" as="geometry" />
+    </mxCell>
+
+    <!-- ===== FLÈCHES ===== -->
+
+    <!-- Frontend → FastAPI (REST) -->
+    <mxCell id="e_rest" edge="1" parent="1" source="fe_react" target="api_fastapi" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2166AC;strokeWidth=2.5;fontColor=#2166AC;fontSize=10;fontStyle=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" value="REST / HTTP">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- FastAPI → HITL (SSE) -->
+    <mxCell id="e_sse" edge="1" parent="1" source="api_fastapi" target="fe_hitl" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#F5A623;strokeWidth=2.5;fontColor=#7B4A00;fontSize=10;fontStyle=1;dashed=1;dashPattern=8 4;endArrow=open;endFill=0;" value="SSE events">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="205" y="172" />
+          <mxPoint x="665" y="172" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- FastAPI → LangGraph -->
+    <mxCell id="e_fg" edge="1" parent="1" source="api_fastapi" target="api_langgraph" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#5B9EC9;strokeWidth=2;endArrow=block;endFill=1;" value="invoke">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- LangGraph → Agents -->
+    <mxCell id="e_lg_ag0" edge="1" parent="1" source="api_langgraph" target="ag0_bg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#7B5EA7;strokeWidth=2;endArrow=block;endFill=1;" value="">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_lg_ag1" edge="1" parent="1" source="api_langgraph" target="ag1_bg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#7B5EA7;strokeWidth=2;endArrow=block;endFill=1;" value="">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_lg_ag2" edge="1" parent="1" source="api_langgraph" target="ag2_bg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#7B5EA7;strokeWidth=2;endArrow=block;endFill=1;" value="">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_lg_ag3" edge="1" parent="1" source="api_langgraph" target="ag3_bg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#7B5EA7;strokeWidth=2;endArrow=block;endFill=1;" value="">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Flux agents séquentiel -->
+    <mxCell id="e_a0a1" edge="1" parent="1" source="ag0_bg" target="ag1_bg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#7B5EA7;strokeWidth=2;endArrow=block;endFill=1;" value="">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_a1a2" edge="1" parent="1" source="ag1_bg" target="ag2_bg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#7B5EA7;strokeWidth=2;endArrow=block;endFill=1;" value="">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_a2a3" edge="1" parent="1" source="ag2_bg" target="ag3_bg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#7B5EA7;strokeWidth=2;endArrow=block;endFill=1;" value="">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Agents → PostgreSQL -->
+    <mxCell id="e_sqlalchemy" edge="1" parent="1" source="ag1_bg" target="db_pg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#3E9E85;strokeWidth=2.5;fontColor=#0B4F3A;fontSize=10;fontStyle=1;endArrow=block;endFill=1;" value="SQLAlchemy async">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- GraphRAG → Agent 02 -->
+    <mxCell id="e_rag" edge="1" parent="1" source="db_graph" target="ag2_bg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#3E9E85;strokeWidth=2.5;fontColor=#0B4F3A;fontSize=10;fontStyle=1;dashed=1;dashPattern=8 4;endArrow=open;endFill=0;" value="contexte RAG">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Vault → Agent 03 -->
+    <mxCell id="e_vault" edge="1" parent="1" source="db_vault" target="ag3_bg" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#3E9E85;strokeWidth=2.5;fontColor=#0B4F3A;fontSize=10;fontStyle=1;dashed=1;dashPattern=8 4;endArrow=open;endFill=0;" value="secrets JIT">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Agents → Azure OpenAI -->
+    <mxCell id="e_llm" edge="1" parent="1" source="ag1_bg" target="ext_azure" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#E8A800;strokeWidth=2.5;fontColor=#6B4E00;fontSize=10;fontStyle=1;dashed=1;dashPattern=8 4;endArrow=open;endFill=0;" value="LLM calls gpt-5.1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_rag_llm" edge="1" parent="1" source="fe_chat" target="ext_azure" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#E8A800;strokeWidth=2;fontColor=#6B4E00;fontSize=10;fontStyle=1;dashed=1;dashPattern=8 4;endArrow=open;endFill=0;" value="gpt-4o">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="940" y="142" />
+          <mxPoint x="205" y="142" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Agent 03 → GitHub -->
+    <mxCell id="e_github" edge="1" parent="1" source="ag3_bg" target="ext_github" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#E8A800;strokeWidth=2.5;fontColor=#6B4E00;fontSize=10;fontStyle=1;dashed=1;dashPattern=8 4;endArrow=open;endFill=0;" value="PR + CI/CD">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1016" y="480" />
+          <mxPoint x="450" y="480" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Agent 02 → Checkov/Terraform (subprocess) -->
+    <mxCell id="e_terraform" edge="1" parent="1" source="ag2_bg" target="ext_tf" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#E8A800;strokeWidth=2;fontColor=#6B4E00;fontSize=10;fontStyle=1;endArrow=block;endFill=1;" value="subprocess">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_checkov" edge="1" parent="1" source="ag2_bg" target="ext_checkov" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#E8A800;strokeWidth=2;fontColor=#6B4E00;fontSize=10;fontStyle=1;endArrow=block;endFill=1;" value="subprocess">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Terraform → Cloud cibles -->
+    <mxCell id="e_deploy_aws" edge="1" parent="1" source="ext_tf" target="cld_aws" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#4DAA6B;strokeWidth=2.5;fontColor=#0B4F1E;fontSize=10;fontStyle=1;endArrow=block;endFill=1;" value="terraform apply">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_deploy_azure" edge="1" parent="1" source="ext_tf" target="cld_azure_cloud" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#4DAA6B;strokeWidth=2.5;fontColor=#0B4F1E;fontSize=10;fontStyle=1;endArrow=block;endFill=1;" value="">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_deploy_gcp" edge="1" parent="1" source="ext_tf" target="cld_gcp" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#4DAA6B;strokeWidth=2.5;fontColor=#0B4F1E;fontSize=10;fontStyle=1;endArrow=block;endFill=1;" value="">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Stack Analyzer → GitHub (clone) -->
+    <mxCell id="e_ag0_github" edge="1" parent="1" source="ag0_bg" target="ext_github" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#E8A800;strokeWidth=1.5;fontColor=#6B4E00;fontSize=10;fontStyle=1;dashed=1;dashPattern=8 4;endArrow=open;endFill=0;" value="clone repo">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="201" y="480" />
+          <mxPoint x="450" y="480" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- ===== LÉGENDE ===== -->
+    <mxCell id="leg_bg" parent="1" style="rounded=1;arcSize=4;fillColor=#F8F8F8;strokeColor=#CCCCCC;strokeWidth=1;" value="" vertex="1">
+      <mxGeometry height="40" width="1160" x="70" y="858" as="geometry" />
+    </mxCell>
+    <mxCell id="leg_solid" edge="1" parent="1" style="edgeStyle=none;strokeColor=#2166AC;strokeWidth=2.5;endArrow=block;endFill=1;" value="">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="90" y="878" as="sourcePoint" />
+        <mxPoint x="150" y="878" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="leg_solid_lbl" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontColor=#2C3E50;" value="Flux synchrone" vertex="1">
+      <mxGeometry height="20" width="140" x="156" y="868" as="geometry" />
+    </mxCell>
+    <mxCell id="leg_dashed" edge="1" parent="1" style="edgeStyle=none;strokeColor=#7B5EA7;strokeWidth=2.5;dashed=1;dashPattern=8 4;endArrow=open;endFill=0;" value="">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="360" y="878" as="sourcePoint" />
+        <mxPoint x="420" y="878" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="leg_dashed_lbl" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontColor=#2C3E50;" value="Réponse asynchrone / événement" vertex="1">
+      <mxGeometry height="20" width="230" x="426" y="868" as="geometry" />
+    </mxCell>
+    <mxCell id="leg_star_lbl" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;fontColor=#7B4A00;fontStyle=1;" value="* = point d'interruption HITL (ask_human · ask_user_services · wait_runner)" vertex="1">
+      <mxGeometry height="20" width="460" x="720" y="868" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>

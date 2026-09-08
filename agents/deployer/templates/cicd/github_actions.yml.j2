@@ -1,0 +1,393 @@
+name: "Deploy — {{ cloud_provider | upper }} Infrastructure"
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options: [staging, production]
+      run_data_migration:
+        description: "Run data migration (S3→Blob / PostgreSQL)"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+
+env:
+  TF_VERSION: "1.6.0"
+  TF_IN_AUTOMATION: "true"
+  # Terraform credentials injected from GitHub Secrets
+  {% if cloud_provider == "azure" %}
+  ARM_CLIENT_ID:       ${{ "{{" }} secrets.ARM_CLIENT_ID {{ "}}" }}
+  ARM_CLIENT_SECRET:   ${{ "{{" }} secrets.ARM_CLIENT_SECRET {{ "}}" }}
+  ARM_TENANT_ID:       ${{ "{{" }} secrets.ARM_TENANT_ID {{ "}}" }}
+  ARM_SUBSCRIPTION_ID: ${{ "{{" }} secrets.ARM_SUBSCRIPTION_ID {{ "}}" }}
+  {% elif cloud_provider == "aws" %}
+  AWS_ACCESS_KEY_ID:     ${{ "{{" }} secrets.AWS_ACCESS_KEY_ID {{ "}}" }}
+  AWS_SECRET_ACCESS_KEY: ${{ "{{" }} secrets.AWS_SECRET_ACCESS_KEY {{ "}}" }}
+  AWS_DEFAULT_REGION:    {{ region }}
+  {% elif cloud_provider == "gcp" %}
+  GOOGLE_CREDENTIALS: ${{ "{{" }} secrets.GOOGLE_CREDENTIALS {{ "}}" }}
+  GOOGLE_PROJECT:     {{ project_id }}
+  {% endif %}
+
+# Prevent concurrent deployments to the same environment
+concurrency:
+  group: terraform-${{ "{{" }} github.ref {{ "}}" }}
+  cancel-in-progress: false
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 1 — Validate: syntax check + security scan
+  # ───────────────────────────────────────────────────────────────────────────
+  validate:
+    name: "Validate Terraform"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform {{ "{{ env.TF_VERSION }}" }}
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ "{{" }} env.TF_VERSION {{ "}}" }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Init
+        run: terraform init -input=false -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Checkov Security Scan
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          output_format: github_failed_only
+          soft_fail: true
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 2 — Plan: generate and display the execution plan
+  # ───────────────────────────────────────────────────────────────────────────
+  plan:
+    name: "Terraform Plan"
+    runs-on: ubuntu-latest
+    needs: validate
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ "{{" }} env.TF_VERSION {{ "}}" }}
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -input=false -no-color -out=tfplan 2>&1 | tee plan_output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Post Plan to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('plan_output.txt', 'utf8');
+            const maxLen = 60000;
+            const truncated = plan.length > maxLen
+              ? plan.substring(0, maxLen) + '\n\n... (output truncated)'
+              : plan;
+            const body = `## Terraform Plan — {{ cloud_provider | upper }}
+            <details><summary>Show Plan</summary>
+
+            \`\`\`hcl
+            ${truncated}
+            \`\`\`
+            </details>
+
+            *Pushed by @${{ "{{" }} github.actor {{ "}}" }}, Action: \`${{ "{{" }} github.event_name {{ "}}" }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Check Plan Status
+        if: steps.plan.outputs.exit_code != '0'
+        run: |
+          echo "Terraform plan failed — check output above"
+          exit 1
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ "{{" }} github.sha {{ "}}" }}
+          path: tfplan
+          retention-days: 5
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 3 — Apply: deploy infrastructure
+  # ───────────────────────────────────────────────────────────────────────────
+  apply:
+    name: "Terraform Apply"
+    runs-on: ubuntu-latest
+    needs: plan
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    environment:
+      name: ${{ "{{" }} github.event.inputs.environment || 'staging' {{ "}}" }}
+    outputs:
+      {% if cloud_provider == "azure" %}
+      storage_account_name: ${{ "{{" }} steps.tf_outputs.outputs.storage_account_name {{ "}}" }}
+      postgresql_fqdn:       ${{ "{{" }} steps.tf_outputs.outputs.postgresql_fqdn {{ "}}" }}
+      cognitive_account_name: ${{ "{{" }} steps.tf_outputs.outputs.cognitive_account_name {{ "}}" }}
+      {% endif %}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ "{{" }} env.TF_VERSION {{ "}}" }}
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ "{{" }} github.sha {{ "}}" }}
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Capture Terraform Outputs
+        id: tf_outputs
+        run: |
+          {% if cloud_provider == "azure" %}
+          echo "storage_account_name=$(terraform output -raw storage_account_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "postgresql_fqdn=$(terraform output -raw postgresql_server_fqdn 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "cognitive_account_name=$(terraform output -raw cognitive_account_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          {% endif %}
+          terraform output -json > tf_outputs.json || true
+
+      - name: Upload Terraform Outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: tf-outputs-${{ "{{" }} github.sha {{ "}}" }}
+          path: tf_outputs.json
+          retention-days: 7
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 4 — Data Migration: S3 → Blob + PostgreSQL → Azure PostgreSQL
+  # Runs after apply, only when explicitly triggered or on workflow_dispatch
+  # with run_data_migration=true
+  # ───────────────────────────────────────────────────────────────────────────
+  data-migration:
+    name: "Data Migration"
+    runs-on: ubuntu-latest
+    needs: apply
+    if: |
+      (github.event_name == 'workflow_dispatch' &&
+       github.event.inputs.run_data_migration == 'true')
+    environment:
+      name: ${{ "{{" }} github.event.inputs.environment || 'staging' {{ "}}" }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Terraform Outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: tf-outputs-${{ "{{" }} github.sha {{ "}}" }}
+        continue-on-error: true
+
+      {% if cloud_provider == "azure" %}
+      # ── S3 → Azure Blob Storage ──────────────────────────────────────────
+      - name: "Migrate S3 → Azure Blob Storage"
+        if: env.AWS_S3_BUCKET != ''
+        env:
+          AWS_S3_BUCKET:             ${{ "{{" }} secrets.SOURCE_S3_BUCKET {{ "}}" }}
+          AWS_ACCESS_KEY_ID:         ${{ "{{" }} secrets.AWS_ACCESS_KEY_ID {{ "}}" }}
+          AWS_SECRET_ACCESS_KEY:     ${{ "{{" }} secrets.AWS_SECRET_ACCESS_KEY {{ "}}" }}
+          AWS_DEFAULT_REGION:        ${{ "{{" }} secrets.AWS_DEFAULT_REGION || 'eu-west-1' {{ "}}" }}
+          AZURE_STORAGE_ACCOUNT_NAME: ${{ "{{" }} needs.apply.outputs.storage_account_name {{ "}}" }}
+          AZURE_STORAGE_CONTAINER:   "exports"
+        run: |
+          echo "=== S3 → Azure Blob Storage Migration ==="
+          if [[ -z "$AWS_S3_BUCKET" ]]; then
+            echo "⚠️ SOURCE_S3_BUCKET secret not set — skipping S3 migration."
+            exit 0
+          fi
+
+          # Install azcopy
+          curl -sL https://aka.ms/downloadazcopy-v10-linux | tar xz --strip-components=1
+          ./azcopy --version
+
+          # Generate SAS token for destination
+          AZURE_SAS=$(az storage container generate-sas \
+            --account-name "$AZURE_STORAGE_ACCOUNT_NAME" \
+            --name "$AZURE_STORAGE_CONTAINER" \
+            --permissions acdlrw \
+            --expiry "$(date -u -d '+2 hours' '+%Y-%m-%dT%H:%MZ')" \
+            --auth-mode login \
+            -o tsv)
+
+          DEST_URL="https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${AZURE_STORAGE_CONTAINER}?${AZURE_SAS}"
+
+          echo "Source : s3://$AWS_S3_BUCKET"
+          echo "Target : https://$AZURE_STORAGE_ACCOUNT_NAME.blob.core.windows.net/$AZURE_STORAGE_CONTAINER"
+
+          ./azcopy copy "s3://$AWS_S3_BUCKET/*" "$DEST_URL" --recursive
+          echo "✅ S3 → Blob migration completed."
+
+      # ── PostgreSQL (RDS) → Azure PostgreSQL ──────────────────────────────
+      - name: "Migrate PostgreSQL → Azure PostgreSQL"
+        if: env.SOURCE_DB_URL != ''
+        env:
+          SOURCE_DB_URL:   ${{ "{{" }} secrets.SOURCE_DB_URL {{ "}}" }}
+          AZURE_PG_HOST:   ${{ "{{" }} needs.apply.outputs.postgresql_fqdn {{ "}}" }}
+          AZURE_PG_USER:   ${{ "{{" }} secrets.AZURE_PG_ADMIN_USER {{ "}}" }}
+          AZURE_PG_PASS:   ${{ "{{" }} secrets.AZURE_PG_ADMIN_PASSWORD {{ "}}" }}
+          AZURE_PG_DB:     ${{ "{{" }} secrets.AZURE_PG_DB_NAME || 'appdb' {{ "}}" }}
+        run: |
+          echo "=== PostgreSQL → Azure PostgreSQL Migration ==="
+          if [[ -z "$SOURCE_DB_URL" ]]; then
+            echo "⚠️ SOURCE_DB_URL secret not set — skipping PostgreSQL migration."
+            exit 0
+          fi
+
+          # Install pg tools
+          sudo apt-get install -y postgresql-client 2>/dev/null
+
+          DUMP_FILE="/tmp/pg_migration.dump"
+          echo "Dumping source database..."
+          pg_dump \
+            --format=custom \
+            --no-owner \
+            --no-acl \
+            --file="$DUMP_FILE" \
+            "$SOURCE_DB_URL"
+
+          echo "Dump size: $(du -sh $DUMP_FILE | cut -f1)"
+          echo "Restoring to Azure PostgreSQL ($AZURE_PG_HOST)..."
+
+          PGPASSWORD="$AZURE_PG_PASS" pg_restore \
+            --host="$AZURE_PG_HOST" \
+            --port=5432 \
+            --username="$AZURE_PG_USER" \
+            --dbname="$AZURE_PG_DB" \
+            --no-owner \
+            --no-acl \
+            --clean \
+            --if-exists \
+            "$DUMP_FILE"
+
+          echo "✅ PostgreSQL data migration completed."
+          rm -f "$DUMP_FILE"
+      {% endif %}
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 5 — Health Check: validate post-deployment connectivity
+  # ───────────────────────────────────────────────────────────────────────────
+  health-check:
+    name: "Post-Deployment Health Check"
+    runs-on: ubuntu-latest
+    needs: [apply, data-migration]
+    if: always() && needs.apply.result == 'success'
+
+    steps:
+      - name: Download Terraform Outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: tf-outputs-${{ "{{" }} github.sha {{ "}}" }}
+        continue-on-error: true
+
+      {% if cloud_provider == "azure" %}
+      - name: Check Azure PostgreSQL connectivity
+        env:
+          AZURE_PG_HOST: ${{ "{{" }} needs.apply.outputs.postgresql_fqdn {{ "}}" }}
+        run: |
+          if [[ -z "$AZURE_PG_HOST" ]]; then
+            echo "ℹ️ No PostgreSQL in this deployment — skipping."
+            exit 0
+          fi
+          echo "Checking PostgreSQL endpoint: $AZURE_PG_HOST:5432"
+          timeout 15 bash -c "until nc -z $AZURE_PG_HOST 5432; do sleep 2; done" \
+            && echo "✅ PostgreSQL reachable" \
+            || echo "⚠️ PostgreSQL not reachable after 15s (firewall may need time)"
+
+      - name: Check Azure Blob Storage endpoint
+        env:
+          AZURE_STORAGE_ACCOUNT_NAME: ${{ "{{" }} needs.apply.outputs.storage_account_name {{ "}}" }}
+        run: |
+          if [[ -z "$AZURE_STORAGE_ACCOUNT_NAME" ]]; then
+            echo "ℹ️ No Storage Account in this deployment — skipping."
+            exit 0
+          fi
+          URL="https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" || echo "000")
+          if [[ "$STATUS" =~ ^(200|400|403|404)$ ]]; then
+            echo "✅ Azure Blob Storage reachable (HTTP $STATUS): $AZURE_STORAGE_ACCOUNT_NAME"
+          else
+            echo "⚠️ Azure Blob Storage not reachable (HTTP $STATUS)"
+          fi
+
+      - name: Check Azure OpenAI endpoint
+        env:
+          COGNITIVE_NAME: ${{ "{{" }} needs.apply.outputs.cognitive_account_name {{ "}}" }}
+        run: |
+          if [[ -z "$COGNITIVE_NAME" ]]; then
+            echo "ℹ️ No Azure OpenAI in this deployment — skipping."
+            exit 0
+          fi
+          URL="https://${COGNITIVE_NAME}.openai.azure.com/"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" || echo "000")
+          if [[ "$STATUS" =~ ^(200|401|403)$ ]]; then
+            echo "✅ Azure OpenAI endpoint reachable (HTTP $STATUS): $COGNITIVE_NAME"
+          else
+            echo "⚠️ Azure OpenAI not reachable yet (HTTP $STATUS) — may take a few minutes."
+          fi
+      {% endif %}
+
+      - name: Health Check Summary
+        run: |
+          echo "=== Health Check Complete ==="
+          echo "Infrastructure deployment: ✅"
+          echo "Check full details at: https://portal.azure.com/#home"
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Job 6 — Notify on failure
+  # ───────────────────────────────────────────────────────────────────────────
+  notify-failure:
+    name: "Notify on Failure"
+    runs-on: ubuntu-latest
+    needs: [validate, plan, apply, data-migration, health-check]
+    if: failure()
+    steps:
+      - name: Log failure
+        run: |
+          echo "Deployment FAILED for commit ${{ "{{" }} github.sha {{ "}}" }}"
+          echo "Branch : ${{ "{{" }} github.ref_name {{ "}}" }}"
+          echo "Actor  : ${{ "{{" }} github.actor {{ "}}" }}"
